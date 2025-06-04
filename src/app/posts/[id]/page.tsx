@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { Post } from "@/types/post";
+import Image from "next/image"; // ← 追加！
 
 // Firestore Timestampやstring/numberを安全に日付文字列へ変換
 function formatDate(dateVal: string | number | { seconds?: number }) {
@@ -43,7 +44,10 @@ export default function PostDetailPage() {
     fetchPost();
   }, [id]);
 
-  if (!post) return <div style={{ textAlign: "center", marginTop: 60 }}>Loading...</div>;
+  if (!post)
+    return (
+      <div style={{ textAlign: "center", marginTop: 60 }}>Loading...</div>
+    );
 
   return (
     <div
@@ -72,9 +76,11 @@ export default function PostDetailPage() {
       </button>
       <div>
         {post.image && (
-          <img
+          <Image
             src={post.image}
             alt={post.title}
+            width={650}
+            height={310}
             style={{
               width: "100%",
               maxHeight: 310,
@@ -82,6 +88,7 @@ export default function PostDetailPage() {
               borderRadius: 12,
               marginBottom: 18,
             }}
+            unoptimized // 外部URLの場合は必須
           />
         )}
         <h1

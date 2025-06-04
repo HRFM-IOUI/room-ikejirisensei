@@ -27,7 +27,7 @@ export default function LoginPage() {
       });
 
       router.push("/dashboard");
-    } catch (err) {
+    } catch {
       setError("ログインに失敗しました");
     }
   };
