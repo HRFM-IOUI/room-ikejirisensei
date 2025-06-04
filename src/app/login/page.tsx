@@ -11,7 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     try {
@@ -27,7 +27,7 @@ export default function LoginPage() {
       });
 
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err) {
       setError("ログインに失敗しました");
     }
   };

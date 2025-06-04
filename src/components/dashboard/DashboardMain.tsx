@@ -5,6 +5,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -36,7 +37,7 @@ export default function DashboardMain({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  function onDragEnd(event: any) {
+  function onDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (active.id !== over?.id) {
       const oldIndex = blocks.findIndex(b => b.id === active.id);

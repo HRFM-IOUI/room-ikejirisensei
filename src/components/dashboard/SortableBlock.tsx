@@ -4,6 +4,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Block } from "./dashboardConstants";
 import styles from "./Dashboard.module.css";
 import { FaGripVertical, FaTrash } from "react-icons/fa";
+import Image from "next/image";
 
 type Props = {
   block: Block;
@@ -165,10 +166,13 @@ export default function SortableBlock({
           />
         ) : block.type === "image" ? (
           block.content ? (
-            <img
+            <Image
               src={block.content}
               alt="アップロード画像"
               style={{ maxWidth: "100%", borderRadius: 8 }}
+              width={600}
+              height={350}
+              unoptimized
             />
           ) : (
             <input

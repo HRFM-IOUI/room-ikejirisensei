@@ -6,6 +6,7 @@ import type { Post } from "@/types/post";
 import Link from "next/link";
 import { FaCalendarAlt, FaRegHeart, FaHeart, FaShareAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
+import Image from "next/image"; // 追加
 
 // タグごとに色分けするカラーマップ
 const TAG_COLORS: { [key: string]: string } = {
@@ -36,19 +37,20 @@ function useFavorites() {
 }
 
 // 日付フォーマット
-function formatDate(dateVal: any) {
+function formatDate(dateVal: string | number | { seconds?: number }) {
   if (!dateVal) return "";
   let d: Date;
-  if (typeof dateVal === "object" && dateVal.seconds) {
+  if (typeof dateVal === "object" && dateVal !== null && "seconds" in dateVal && typeof dateVal.seconds === "number") {
     d = new Date(dateVal.seconds * 1000);
   } else {
-    d = new Date(dateVal);
+    d = new Date(dateVal as string | number);
   }
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
   return `${yyyy}.${mm}.${dd}`;
 }
+
 
 // メインコンポーネント
 export default function PostsPage() {
@@ -122,10 +124,13 @@ export default function PostsPage() {
               <span className="ripple"></span>
               {/* カード画像 */}
               <div className="relative w-full h-48 overflow-hidden">
-                <img
+                <Image
                   src={post.image || "/logo.svg"}
                   alt={post.title}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 group-hover:brightness-110"
+                  width={480}
+                  height={192}
+                  unoptimized
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/0 opacity-75 group-hover:opacity-85 transition" />
                 {/* フェードインタイトル */}

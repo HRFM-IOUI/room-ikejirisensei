@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import Image from "next/image";
 
 type WanNyanVideo = {
   type: "youtube" | "firestore";
@@ -15,7 +16,7 @@ type WanNyanVideo = {
 export default function WanNyanFeed() {
   const [videos, setVideos] = useState<WanNyanVideo[]>([]);
   const [current, setCurrent] = useState(0);
-  const [touchStartY, setTouchStartY] = useState(0); // ←推奨対応
+  const [touchStartY, setTouchStartY] = useState(0);
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -33,7 +34,7 @@ export default function WanNyanFeed() {
     else if (e.deltaY < 0 && current > 0) setCurrent(c => c - 1);
   };
 
-  // スワイプ判定（useState化済み）
+  // スワイプ判定
   const handleTouchStart = (e: React.TouchEvent) => {
     setTouchStartY(e.touches[0].clientY);
   };
@@ -143,12 +144,13 @@ export default function WanNyanFeed() {
               alignItems: "center",
               gap: 8,
             }}>
-              <img
+              <Image
                 src={v.profileIcon || "/wan_nyan_icon.png"}
                 width={46}
                 height={46}
                 style={{ borderRadius: "50%", border: "2px solid #fff" }}
                 alt={v.title + "のアイコン"}
+                unoptimized
               />
               <button style={{
                 marginTop: 8,

@@ -3,14 +3,17 @@ import { Block } from "./dashboardConstants";
 import styles from "./Dashboard.module.css";
 import { FaExpand } from "react-icons/fa";
 
+type Option = { label: string; value: string };
+type ColorPreset = { value: string };
+
 type Props = {
   selectedBlock: Block | undefined;
   handleBlockStyle: (id: string, style: Partial<Block['style']>) => void;
-  FONT_OPTIONS: any[];
-  FONT_SIZE_OPTIONS: any[];
-  COLOR_PRESETS: any[];
-  BG_COLOR_PRESETS: any[];
-  onFullscreenEdit?: () => void; // 追加
+  FONT_OPTIONS: Option[];
+  FONT_SIZE_OPTIONS: Option[];
+  COLOR_PRESETS: ColorPreset[];
+  BG_COLOR_PRESETS: ColorPreset[];
+  onFullscreenEdit?: () => void;
 };
 
 const LABEL_COLOR = "#192349";
@@ -31,7 +34,7 @@ export default function DashboardRightPanel({
     key: "underline" | "line-through",
     checked: boolean
   ) => {
-    let current = selectedBlock?.style?.textDecoration || "";
+    const current = selectedBlock?.style?.textDecoration || "";
     let arr = current.split(" ").filter(Boolean);
     if (checked) {
       if (!arr.includes(key)) arr.push(key);

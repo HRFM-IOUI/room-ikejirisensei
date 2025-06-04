@@ -1,18 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, getDocs, Timestamp } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { Post } from "../types/post";
+import Image from "next/image";
+import Link from "next/link";
 
 const DEFAULT_IMAGE = "/logo.svg";
 
 // 日付を「YYYY-MM-DD」形式で表示
-function formatDate(dateVal: any) {
+function formatDate(dateVal: string | number | { seconds?: number }) {
   if (!dateVal) return "";
   let d: Date;
-  if (typeof dateVal === "object" && dateVal.seconds) {
+  if (
+    typeof dateVal === "object" &&
+    dateVal !== null &&
+    "seconds" in dateVal &&
+    typeof dateVal.seconds === "number"
+  ) {
     d = new Date(dateVal.seconds * 1000);
   } else {
-    d = new Date(dateVal);
+    d = new Date(dateVal as string | number);
   }
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -63,10 +70,13 @@ export default function HeroSection() {
               `}
               style={{ borderLeft: "none", borderRight: "none" }}
             >
-              <img
+              <Image
                 src={p.image || DEFAULT_IMAGE}
                 alt={p.title}
                 className="w-20 h-20 object-cover rounded-xl border border-[#192349]/10"
+                width={80}
+                height={80}
+                unoptimized
               />
               <div className="flex-1 min-w-0">
                 <div className="block text-lg font-bold text-[#192349] truncate">
@@ -81,7 +91,7 @@ export default function HeroSection() {
         </ul>
         {/* 記事一覧への導線ボタン */}
         <div className="mt-6 text-center">
-          <a
+          <Link
             href="/posts"
             className="
               inline-block bg-blue-700 text-white py-3 px-6 rounded-xl shadow-md font-bold
@@ -89,7 +99,7 @@ export default function HeroSection() {
             "
           >
             記事一覧を見る
-          </a>
+          </Link>
         </div>
       </div>
       {/* 右：先生ポスター＆プロフィール */}
@@ -98,11 +108,14 @@ export default function HeroSection() {
         style={{ maxWidth: 370 }}
       >
         <div className="relative mb-4">
-          <img
+          <Image
             src="/poster_2025.jpg"
             alt="池尻成二ポスター"
             className="w-[310px] lg:w-[350px] rounded-2xl shadow-lg border-4 border-primary"
             style={{ maxWidth: 350, height: 'auto' }}
+            width={350}
+            height={350}
+            priority
           />
         </div>
         <div className="text-[#192349] font-extrabold text-xl text-center mt-2">
