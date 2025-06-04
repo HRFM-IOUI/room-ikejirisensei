@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from "react"; // useRef削除
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 
@@ -15,6 +15,7 @@ type WanNyanVideo = {
 export default function WanNyanFeed() {
   const [videos, setVideos] = useState<WanNyanVideo[]>([]);
   const [current, setCurrent] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(0); // ←推奨対応
 
   useEffect(() => {
     const fetchVideos = async () => {
@@ -32,10 +33,9 @@ export default function WanNyanFeed() {
     else if (e.deltaY < 0 && current > 0) setCurrent(c => c - 1);
   };
 
-  // スワイプ判定用
-  let touchStartY = 0;
+  // スワイプ判定（useState化済み）
   const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartY = e.touches[0].clientY;
+    setTouchStartY(e.touches[0].clientY);
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const deltaY = e.changedTouches[0].clientY - touchStartY;
@@ -148,7 +148,7 @@ export default function WanNyanFeed() {
                 width={46}
                 height={46}
                 style={{ borderRadius: "50%", border: "2px solid #fff" }}
-                alt={v.title + "のアイコン"} // 追加
+                alt={v.title + "のアイコン"}
               />
               <button style={{
                 marginTop: 8,
