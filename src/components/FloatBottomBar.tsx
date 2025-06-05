@@ -1,3 +1,5 @@
+// FloatBottomBar.tsx（白い余白完全カット版）
+
 "use client";
 import { useState } from "react";
 import { FaSearch, FaBars, FaUniversalAccess } from "react-icons/fa";
@@ -6,7 +8,6 @@ import AccessibilityPanel from "./AccessibilityPanel";
 import SideMenu from "./SideMenu";
 import SearchModal from "./SearchModal";
 
-// スマホ・タブレットでのみ表示
 export default function FloatBottomBar() {
   const [openMenu, setOpenMenu] = useState<null | "access" | "menu" | "search">(null);
 
@@ -37,7 +38,7 @@ export default function FloatBottomBar() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm animate-fadeIn" />
           <Dialog.Content className="fixed z-[201] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-            bg-white rounded-3xl shadow-2xl w-full max-w-xs p-6 animate-fadeInUp">
+            bg-white rounded-3xl shadow-2xl w-full max-w-xs p-0 animate-fadeInUp">
             <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
             <AccessibilityPanel />
           </Dialog.Content>
@@ -54,9 +55,8 @@ export default function FloatBottomBar() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm animate-fadeIn" />
           <Dialog.Content className="fixed z-[201] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-            bg-white rounded-3xl shadow-2xl w-full max-w-xl p-6 animate-fadeInUp">
+            bg-white rounded-3xl shadow-2xl w-full max-w-xl p-0 animate-fadeInUp">
             <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
-            {/* open/onCloseをPropsで制御 */}
             <SearchModal open={true} onClose={() => setOpenMenu(null)} />
           </Dialog.Content>
         </Dialog.Portal>
@@ -72,7 +72,7 @@ export default function FloatBottomBar() {
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm animate-fadeIn" />
           <Dialog.Content className="fixed z-[201] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-            bg-white rounded-3xl shadow-2xl w-full max-w-xs p-6 animate-fadeInUp">
+            bg-white rounded-3xl shadow-2xl w-full max-w-xs p-0 animate-fadeInUp">
             <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
             <SideMenu />
           </Dialog.Content>
