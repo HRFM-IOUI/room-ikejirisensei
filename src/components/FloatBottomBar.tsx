@@ -40,10 +40,10 @@ export default function FloatBottomBar() {
             className="
               fixed z-[201] left-1/2 top-1/2
               -translate-x-1/2 -translate-y-1/2
-              w-full max-w-xs animate-fadeInUp
+              bg-white rounded-3xl shadow-2xl
+              w-full max-w-xs p-6 animate-fadeInUp
               flex flex-col items-center justify-center
             "
-            style={{ background: "transparent", boxShadow: "none", padding: 0, minHeight: "unset" }}
           >
             <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
             <AccessibilityPanel />
@@ -64,20 +64,18 @@ export default function FloatBottomBar() {
             className="
               fixed z-[201] left-1/2 top-1/2
               -translate-x-1/2 -translate-y-1/2
-              w-full max-w-xl animate-fadeInUp
+              bg-white rounded-3xl shadow-2xl
+              w-full max-w-xl p-6 animate-fadeInUp
               flex flex-col items-center justify-center
             "
-            style={{ background: "transparent", boxShadow: "none", padding: 0, minHeight: "unset" }}
           >
             <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
-            <div className="w-full">
-              {/* open/onCloseをPropsで制御 */}
-              <SearchModal open={true} onClose={() => setOpenMenu(null)} />
-            </div>
+            {/* open/onCloseをPropsで制御 */}
+            <SearchModal open={true} onClose={() => setOpenMenu(null)} />
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-      {/* サイドメニューDrawer */}
+      {/* サイドメニューDrawer（モバイル中央寄せ＆白枠排除！） */}
       <Dialog.Root open={openMenu === "menu"} onOpenChange={v => setOpenMenu(v ? "menu" : null)}>
         <Dialog.Trigger asChild>
           <button className="flex flex-col items-center group" aria-label="メニュー">
@@ -91,13 +89,34 @@ export default function FloatBottomBar() {
             className="
               fixed z-[201] left-1/2 top-1/2
               -translate-x-1/2 -translate-y-1/2
-              w-auto max-w-xs animate-fadeInUp
+              bg-transparent shadow-none p-0 animate-fadeInUp
               flex flex-col items-center justify-center
             "
-            style={{ background: "transparent", boxShadow: "none", padding: 0, minHeight: "unset" }}
+            style={{
+              boxShadow: "none",
+              background: "transparent",
+              padding: 0,
+              minHeight: "unset"
+            }}
           >
-            <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
-            <SideMenu />
+            <button
+              onClick={() => setOpenMenu(null)}
+              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black"
+            >×</button>
+            <div style={{
+              position: "static",
+              inset: "unset",
+              top: "unset",
+              right: "unset",
+              left: "unset",
+              margin: 0,
+              width: "250px", // SideMenu幅と揃える
+              maxWidth: "95vw",
+              zIndex: 1,
+              borderRadius: "1.5rem"
+            }}>
+              <SideMenu isMobile={true} />
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

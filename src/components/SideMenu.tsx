@@ -1,21 +1,33 @@
 import React from "react";
 
-// 余白徹底カット、メニューと事務所情報のみ
-export default function SideMenu() {
+// isMobile対応。PCは今まで通り、モバイル時のみ「固定/座標」を消す
+export default function SideMenu({ isMobile = false }: { isMobile?: boolean }) {
   return (
     <aside
-      className="
-        fixed top-[72px] right-[1mm] w-[250px]
+      className={`
+        ${isMobile ? "" : "fixed top-[72px] right-[1mm]"}
+        w-[250px]
         bg-gradient-to-br from-[#1e275a] via-[#192349] to-[#1e275a]
         text-white rounded-3xl shadow-2xl z-40
         p-0 border border-white/10
         flex flex-col
         overflow-hidden
-      "
+      `}
       style={{
         minHeight: "unset",
         height: "auto",
         justifyContent: "flex-start",
+        ...(isMobile
+          ? {
+              position: "static",
+              inset: "unset",
+              top: "unset",
+              right: "unset",
+              left: "unset",
+              margin: "0 auto",
+              boxShadow: "0 4px 32px 8px rgba(25,35,73,0.14)"
+            }
+          : {}),
       }}
       aria-label="サイトメニュー"
     >
