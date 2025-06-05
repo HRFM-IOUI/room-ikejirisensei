@@ -45,31 +45,33 @@ export default function WanNyanFeed() {
   };
 
   if (videos.length === 0) {
-    return <div className="text-center mt-16 text-gray-500">動画を読み込み中…</div>;
+    return <div style={{ color: "#333", textAlign: "center", marginTop: 80 }}>動画を読み込み中…</div>;
   }
 
   const v = videos[current];
 
-  // 動画プレイヤー：レスポンシブサイズで表示
+  // YouTube/Firestore 動画の自動切り替え
   const renderVideo = () => {
     if (v.type === "youtube") {
       return (
-        <div className="w-full aspect-video bg-black rounded-xl overflow-hidden">
-          <iframe
-            width="100%"
-            height="100%"
-            src={`https://www.youtube.com/embed/${v.url}?autoplay=1&mute=1&loop=1&playlist=${v.url}`}
-            title={v.title}
-            frameBorder={0}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-            style={{
-              borderRadius: 12,
-              background: "#000"
-            }}
-          />
-        </div>
+        <iframe
+          width="100%"
+          height="100%"
+          src={`https://www.youtube.com/embed/${v.url}?autoplay=1&mute=1&loop=1&playlist=${v.url}`}
+          title={v.title}
+          frameBorder={0}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="rounded-md md:rounded-lg shadow-lg"
+          style={{
+            width: "100%",
+            height: "100%",
+            minHeight: "220px",
+            maxHeight: "62vw",
+            background: "#000",
+            border: "none"
+          }}
+        />
       );
     }
     // Firestoreアップロード動画
@@ -80,10 +82,14 @@ export default function WanNyanFeed() {
         autoPlay
         loop
         muted
-        className="w-full aspect-video bg-black rounded-xl"
+        className="rounded-md md:rounded-lg shadow-lg"
         style={{
+          width: "100%",
+          height: "100%",
+          minHeight: "220px",
+          maxHeight: "62vw",
+          background: "#000",
           objectFit: "cover",
-          borderRadius: 12,
         }}
         playsInline
         preload="metadata"
@@ -94,63 +100,80 @@ export default function WanNyanFeed() {
   return (
     <section
       className="
-        bg-gradient-to-b from-[#222c44] via-[#1d243a] to-[#18181b]
-        w-full flex flex-col items-center justify-center
-        py-10 sm:py-16 px-0
-        min-h-[60vw] sm:min-h-[340px] md:min-h-[450px]
+        w-full
+        bg-[#000] 
+        flex flex-col items-center justify-center
+        py-4 sm:py-8
         transition-all
-      "
+        "
+      style={{ minHeight: "320px" }}
     >
       <div
         tabIndex={0}
         className="
-          relative w-full max-w-xl sm:max-w-2xl lg:max-w-4xl
-          flex flex-col items-center justify-center
-          rounded-2xl shadow-xl
-          bg-black/40 backdrop-blur-md
+          w-full
+          max-w-full
+          md:max-w-2xl
+          mx-auto
+          flex flex-col
+          items-center
+          justify-center
           overflow-hidden
-          p-0
         "
+        style={{ background: "#000", borderRadius: 12 }}
         onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        {/* 動画本体 */}
-        {renderVideo()}
-        {/* 下部パネル */}
-        <div className="
-          w-full flex items-center justify-between
-          bg-gradient-to-t from-[#192349bb] to-transparent
-          px-4 sm:px-6 py-3 sm:py-4
-          rounded-b-2xl
-          backdrop-blur
-        ">
-          {/* 左：動画タイトル等 */}
-          <div>
-            <div className="font-bold text-white text-base sm:text-lg mb-1">{v.title}</div>
-            <div className="text-xs sm:text-sm text-blue-100">
+        <div className="w-full aspect-video bg-black">
+          {renderVideo()}
+        </div>
+        <div
+          className="
+            w-full
+            flex flex-col sm:flex-row
+            items-center sm:items-end
+            justify-between
+            px-2 py-3 sm:px-5 sm:py-3
+            gap-2 sm:gap-0
+            bg-[#191929a6]
+            rounded-b-md md:rounded-b-lg
+            text-white
+            text-xs sm:text-base
+            shadow-lg
+          "
+        >
+          <div className="flex-1 w-full text-left">
+            <div className="font-bold truncate">{v.title}</div>
+            <div className="mt-1">
               ❤️ {v.likes}　💬 {v.comments}
             </div>
           </div>
-          {/* 右：アイコン＋フォローボタン */}
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1 sm:gap-2">
             <Image
               src={v.profileIcon || "/wan_nyan_icon.png"}
-              width={40}
-              height={40}
-              className="rounded-full border-2 border-white shadow"
+              width={34}
+              height={34}
+              className="rounded-full border-2 border-white"
               alt={v.title + "のアイコン"}
               unoptimized
             />
             <button className="
-              mt-1 rounded-2xl px-4 py-1
-              bg-white text-[#192349] font-bold text-xs sm:text-sm shadow
-              hover:bg-blue-50 active:scale-95 transition
-            ">フォロー</button>
+              mt-1 sm:mt-2
+              bg-white text-[#192349]
+              rounded-lg
+              font-bold
+              px-2 py-1 text-xs sm:text-sm
+              border-none
+              hover:bg-gray-100
+              transition
+              shadow
+            ">
+              フォロー
+            </button>
           </div>
         </div>
       </div>
-      {/* ページャー・インジケーターなど追加したい場合ここに */}
     </section>
   );
 }

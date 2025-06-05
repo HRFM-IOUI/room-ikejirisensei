@@ -10,7 +10,12 @@ const DEFAULT_IMAGE = "/logo.svg";
 function formatDate(dateVal: string | number | { seconds?: number }) {
   if (!dateVal) return "";
   let d: Date;
-  if (typeof dateVal === "object" && dateVal !== null && "seconds" in dateVal && typeof dateVal.seconds === "number") {
+  if (
+    typeof dateVal === "object" &&
+    dateVal !== null &&
+    "seconds" in dateVal &&
+    typeof dateVal.seconds === "number"
+  ) {
     d = new Date(dateVal.seconds * 1000);
   } else {
     d = new Date(dateVal as string | number);
@@ -39,42 +44,49 @@ export default function HeroSection() {
 
   return (
     <section
-      className={`
-        w-full flex flex-col lg:flex-row gap-8 py-6 px-2 sm:px-4 md:px-8
-        bg-white border-b-8 border-primary rounded-b-2xl shadow-lg mx-auto
+      className="
+        w-full
+        flex flex-col lg:flex-row
+        gap-4 lg:gap-8 py-5 lg:py-8
+        bg-white border-b-8 border-primary
+        rounded-b-2xl shadow-lg mx-auto
+        max-w-full lg:max-w-[1180px]
         transition-all
-      `}
-      style={{ maxWidth: '1180px', marginLeft: 'auto', marginRight: 'auto' }}
+      "
+      style={{ marginLeft: "auto", marginRight: "auto" }}
     >
-      {/* 左：最新記事リスト */}
+      {/* 最新記事リスト */}
       <div
-        className={`
-          flex-[6_6_0%] min-w-0 border-r border-gray-200 pr-0 lg:pr-4
-          max-w-full lg:max-w-[490px]
-        `}
+        className="
+          w-full lg:flex-[6_6_0%] min-w-0
+          border-b lg:border-b-0 lg:border-r border-gray-200
+          pb-4 lg:pb-0 lg:pr-4
+          transition-all
+        "
+        style={{ maxWidth: 490 }}
       >
-        <h2 className="text-xl sm:text-2xl font-extrabold text-[#192349] mb-4 sm:mb-6 border-b-4 border-[#192349] pb-2 tracking-wide drop-shadow-sm">
+        <h2 className="text-xl sm:text-2xl font-extrabold text-[#192349] mb-5 border-b-4 border-[#192349] pb-1.5 tracking-wide drop-shadow-sm">
           最新記事
         </h2>
         <ul className="flex flex-col gap-4 sm:gap-6">
           {posts.map((p, idx) => (
             <li
               key={p.id || idx}
-              className={`
+              className="
                 flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white
-                rounded-tl-2xl rounded-br-2xl rounded-tr-lg rounded-bl-lg
-                border-t-2 border-b-2 border-[#192349]
+                rounded-xl border-t-2 border-b-2 border-[#192349]
                 shadow-[0_2px_8px_0_rgba(25,35,73,0.06)]
-                hover:shadow-lg hover:scale-[1.03] hover:border-[#004080] transition-all
-                duration-150
-              `}
+                hover:shadow-lg hover:scale-[1.03] hover:border-[#004080]
+                transition-all duration-150
+                mx-1
+              "
               style={{ borderLeft: "none", borderRight: "none" }}
             >
               <Link href={`/posts/${p.id}`} className="flex items-center gap-3 sm:gap-4 w-full group">
                 <Image
                   src={p.image || DEFAULT_IMAGE}
                   alt={p.title}
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded-xl border border-[#192349]/10 group-hover:opacity-90 transition"
+                  className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-xl border border-[#192349]/10 group-hover:opacity-90 transition"
                   width={80}
                   height={80}
                   unoptimized
@@ -83,7 +95,7 @@ export default function HeroSection() {
                   <div className="block text-base sm:text-lg font-bold text-[#192349] truncate group-hover:underline">
                     {p.title}
                   </div>
-                  <div className="text-xs sm:text-xs text-[#192349] opacity-70 mt-1 sm:mt-2">
+                  <div className="text-xs text-[#192349] opacity-70 mt-2">
                     {formatDate(p.date)}
                   </div>
                 </div>
@@ -96,7 +108,7 @@ export default function HeroSection() {
           <Link
             href="/posts"
             className="
-              inline-block bg-blue-700 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-xl shadow-md font-bold
+              inline-block bg-blue-700 text-white py-2.5 px-5 sm:py-3 sm:px-6 rounded-xl shadow-md font-bold
               hover:bg-blue-900 transition text-sm sm:text-base
             "
           >
@@ -104,19 +116,21 @@ export default function HeroSection() {
           </Link>
         </div>
       </div>
-      {/* 右：先生ポスター＆プロフィール */}
+      {/* 先生ポスター＆プロフィール */}
       <div
-        className={`
-          flex flex-col items-center flex-[4_4_0%] w-full px-0 lg:pl-10 pt-4 sm:pt-6 lg:pt-0
-          max-w-full lg:max-w-[370px]
-        `}
+        className="
+          w-full flex flex-col items-center
+          flex-[4_4_0%] px-0 lg:pl-10 pt-5 lg:pt-0
+          max-w-full lg:max-w-[370px] mx-auto
+          transition-all
+        "
       >
-        <div className="relative mb-4 w-full flex justify-center">
+        <div className="relative mb-2 sm:mb-4 w-full flex justify-center">
           <Image
             src="/poster_2025.jpg"
             alt="池尻成二ポスター"
-            className="w-[90vw] max-w-[310px] sm:max-w-[350px] rounded-2xl shadow-lg border-4 border-primary"
-            style={{ height: 'auto' }}
+            className="w-[90vw] sm:w-[310px] lg:w-[350px] rounded-2xl shadow-lg border-4 border-primary"
+            style={{ maxWidth: 350, height: "auto" }}
             width={350}
             height={350}
             priority
@@ -125,7 +139,7 @@ export default function HeroSection() {
         <div className="text-[#192349] font-extrabold text-lg sm:text-xl text-center mt-2">
           練馬区議会議員 池尻成二
         </div>
-        <div className="text-blue-700 font-medium text-center text-sm sm:text-base mt-2">
+        <div className="text-blue-700 font-medium text-center text-base mt-2">
           つながる市民・練馬／公式サイト
         </div>
       </div>
