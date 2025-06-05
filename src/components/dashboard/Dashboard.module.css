@@ -1,3 +1,97 @@
+.dashboardWrapper {
+  min-height: 100vh;
+  width: 100vw;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 背景SVGが絶対下に来るように */
+.dashboardWrapper > *:not(:first-child) {
+  position: relative;
+  z-index: 1;
+}
+
+/* メインレイアウト中央寄せ */
+.dashboardRoot {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 56px 0 96px 0;
+  min-height: 92vh;
+  gap: 40px;
+  box-sizing: border-box;
+}
+
+.dashboardSidebar {
+  min-width: 220px;
+  max-width: 240px;
+  padding: 32px 20px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(20,36,80,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 1px; /* ←ビタ寄せ調整 */
+}
+
+.dashboardMain {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 900px;    /* ←幅広に！ */
+  padding: 44px 58px;  /* ←パネル内余白も増量 */
+  background: #fff;
+  border-radius: 16px;
+  min-height: 700px;
+  margin: 0 22px;
+  box-shadow: 0 4px 16px rgba(20,36,80,0.04);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: max-width 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.dashboardMainSection {
+  width: 100%;
+}
+
+.dashboardRight {
+  min-width: 260px;
+  max-width: 300px;
+  padding: 36px 22px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(20,36,80,0.11);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.dashboardFooter {
+  width: 100%;
+  max-width: 1400px;
+  margin: 38px auto 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  background: none;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .dashboardRoot {
+    max-width: 99vw;
+    gap: 18px;
+    padding: 32px 0 64px 0;
+  }
+  .dashboardFooter {
+    max-width: 99vw;
+  }
+}
+
 @media (max-width: 1024px) {
   .dashboardRoot {
     flex-direction: column;
@@ -26,6 +120,7 @@
     padding: 0 2vw;
   }
 }
+
 @media (max-width: 600px) {
   .dashboardSidebar,
   .dashboardRight,
@@ -42,4 +137,10 @@
     gap: 6px;
     padding: 0 1vw;
   }
+}
+
+/* ソートブロック用のスタイル */
+.sortableBlock {
+  user-select: none;
+  transition: box-shadow 0.18s cubic-bezier(.44,1.54,.85,1), opacity 0.17s, transform 0.22s, border 0.2s;
 }
