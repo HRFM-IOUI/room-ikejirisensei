@@ -51,7 +51,7 @@ export default function HeroSection() {
         w-full flex flex-col lg:flex-row gap-6 lg:gap-8 py-6 sm:py-8 md:py-10
         bg-white border-b-8 border-primary rounded-b-2xl shadow-lg mx-auto
         px-2 sm:px-4 md:px-6
-        max-w-[99vw] lg:max-w-[1180px]
+        max-w-none
       "
     >
       {/* 左：最新記事リスト */}
