@@ -43,15 +43,9 @@ export default function FloatBottomBar() {
               bg-white rounded-3xl shadow-2xl
               w-full max-w-xs p-6 animate-fadeInUp
               flex flex-col items-center justify-center
-              max-h-[80vh] overflow-y-auto
             "
           >
-            <button
-              onClick={() => setOpenMenu(null)}
-              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black"
-            >
-              ×
-            </button>
+            <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
             <AccessibilityPanel />
           </Dialog.Content>
         </Dialog.Portal>
@@ -73,15 +67,10 @@ export default function FloatBottomBar() {
               bg-white rounded-3xl shadow-2xl
               w-full max-w-xl p-6 animate-fadeInUp
               flex flex-col items-center justify-center
-              max-h-[80vh] overflow-y-auto
             "
           >
-            <button
-              onClick={() => setOpenMenu(null)}
-              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black"
-            >
-              ×
-            </button>
+            <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
+            {/* open/onCloseをPropsで制御 */}
             <SearchModal open={true} onClose={() => setOpenMenu(null)} />
           </Dialog.Content>
         </Dialog.Portal>
@@ -103,16 +92,18 @@ export default function FloatBottomBar() {
               bg-white rounded-3xl shadow-2xl
               w-full max-w-xs p-0 animate-fadeInUp
               flex flex-col items-center justify-center
-              max-h-[80vh] overflow-y-auto
+              min-h-[260px] sm:min-h-[340px]  /* <- 追加：高さを確保して中央に見える */
             "
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
           >
-            <button
-              onClick={() => setOpenMenu(null)}
-              className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black"
-            >
-              ×
-            </button>
-            <SideMenu />
+            <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
+            <div className="flex flex-col w-full items-center justify-center">
+              <SideMenu />
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
