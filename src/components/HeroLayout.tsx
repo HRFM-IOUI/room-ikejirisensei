@@ -24,6 +24,22 @@ export default function HeroLayout() {
         sm:pt-10 sm:pb-8
       "
     >
+      {/* CitizenPanel（モバイル時は中央） */}
+      <div className="block lg:hidden w-full flex justify-center mb-4 sm:mb-6">
+        <div
+          className="
+            w-full max-w-[380px] sm:max-w-[440px]
+            mx-auto
+            px-4 py-6
+            bg-white shadow-xl rounded-3xl
+            flex flex-col items-center
+          "
+          style={{ width: '90vw', maxWidth: 440 }}
+        >
+          <CitizenPanel />
+        </div>
+      </div>
+
       {/* 左サイドパネル（PC/タブレットのみ） */}
       <div
         className="
@@ -40,17 +56,13 @@ export default function HeroLayout() {
         <AccessibilityPanel className="mt-4" />
       </div>
 
-      {/* モバイル時CitizenPanel */}
-      <div className="block lg:hidden w-full max-w-md mx-auto px-2 mb-2">
-        <CitizenPanel />
-      </div>
-
       {/* メイン中央 */}
       <div
         className="
           flex flex-col items-center w-full
-          px-1 sm:px-2 md:px-4
-          lg:mx-auto lg:w-[1200px] lg:max-w-[1200px] lg:pl-[290px] lg:pr-[290px]
+          max-w-full px-1
+          sm:px-2 md:px-4
+          lg:mx-auto lg:max-w-[1200px] lg:pl-[290px] lg:pr-[290px]
           transition-all
         "
       >
