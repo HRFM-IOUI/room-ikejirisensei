@@ -19,6 +19,8 @@ const MODES: { key: EditorMode; label: string }[] = [
   { key: "genkou", label: "原稿用紙" },
 ];
 
+const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
+
 const EditorControlModal: React.FC<Props> = ({
   open, mode, setMode, currentPage, totalPages, setCurrentPage, onSave, onCancel, onClose,
 }) => {
@@ -39,16 +41,18 @@ const EditorControlModal: React.FC<Props> = ({
     >
       <div
         style={{
-          minWidth: 580,
+          minWidth: isMobile ? "auto" : 580,
           maxWidth: "96vw",
-          padding: "28px 40px",
+          width: isMobile ? "96vw" : undefined,
+          padding: isMobile ? "18px 2vw" : "28px 40px",
           background: "#fff",
           borderRadius: 22,
           boxShadow: "0 8px 44px 0 rgba(20,24,72,0.22)",
           display: "flex",
           alignItems: "center",
-          gap: 26,
+          gap: isMobile ? 6 : 26,
           position: "relative",
+          flexWrap: isMobile ? "wrap" : "nowrap",
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -74,27 +78,40 @@ const EditorControlModal: React.FC<Props> = ({
         </button>
         <span style={{
           fontWeight: 900,
-          fontSize: 21,
+          fontSize: isMobile ? 16 : 21,
           color: "#192349",
-          marginRight: 20,
-          letterSpacing: 2
+          marginRight: isMobile ? 8 : 20,
+          letterSpacing: 2,
+          minWidth: isMobile ? 65 : undefined,
         }}>
           執筆モード
         </span>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: isMobile ? 5 : 10,
+            width: isMobile ? "100%" : "auto",
+            justifyContent: isMobile ? "space-between" : "flex-start",
+            flex: isMobile ? 1 : undefined,
+          }}
+        >
           {MODES.map(m => (
             <button
               key={m.key}
               onClick={() => setMode(m.key)}
               style={{
-                padding: "11px 27px",
+                padding: isMobile ? "7px 0" : "11px 27px",
                 borderRadius: 8,
                 background: mode === m.key ? "#e7ecfa" : "#fff",
                 border: "1.3px solid #ccd2e7",
                 fontWeight: 700,
                 color: "#192349",
-                fontSize: 17,
-                cursor: "pointer"
+                fontSize: isMobile ? 15 : 17,
+                cursor: "pointer",
+                flex: isMobile ? 1 : undefined,
+                minWidth: isMobile ? 0 : 86,
+                textAlign: "center",
+                boxSizing: "border-box",
               }}
             >{m.label}</button>
           ))}
@@ -107,7 +124,7 @@ const EditorControlModal: React.FC<Props> = ({
                 padding: "7px 18px",
                 fontSize: 17,
                 borderRadius: 9,
-                color: "#192349",           // ←色指定
+                color: "#192349",
                 border: "1.3px solid #ccd2e7",
                 background: "#fff",
                 fontWeight: 700,
@@ -120,7 +137,7 @@ const EditorControlModal: React.FC<Props> = ({
             <span style={{
               fontWeight: 850,
               fontSize: 19,
-              color: "#192349"         // ←色指定
+              color: "#192349"
             }}>
               {currentPage + 1} / {totalPages}
             </span>
@@ -129,7 +146,7 @@ const EditorControlModal: React.FC<Props> = ({
                 padding: "7px 18px",
                 fontSize: 17,
                 borderRadius: 9,
-                color: "#192349",        // ←色指定
+                color: "#192349",
                 border: "1.3px solid #ccd2e7",
                 background: "#fff",
                 fontWeight: 700,
