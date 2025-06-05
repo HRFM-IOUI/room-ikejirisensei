@@ -40,6 +40,12 @@ export default function HeroLayout() {
         <AccessibilityPanel className="mt-4" />
       </div>
 
+      {/* === モバイル専用 CitizenPanel（HeroSection直上） === */}
+      <div className="block lg:hidden w-full flex justify-center pt-2 pb-2 bg-white z-20">
+        <CitizenPanel />
+      </div>
+      {/* === ここまで === */}
+
       {/* メイン中央 */}
       <div
         className="
