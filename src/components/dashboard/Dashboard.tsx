@@ -7,6 +7,7 @@ import DashboardMain from "./DashboardMain";
 import DashboardRightPanel from "./DashboardRightPanel";
 import DashboardFooter from "./DashboardFooter";
 import FullscreenEditorModal from "./FullscreenEditorModal";
+import DashboardBackground from "./DashboardBackground"; // ★追加！
 import {
   FONT_OPTIONS,
   FONT_SIZE_OPTIONS,
@@ -149,6 +150,7 @@ export default function Dashboard() {
 
   return (
     <div className={styles.dashboardWrapper}>
+      <DashboardBackground /> {/* ← 背景を最初の子に追加 */}
       <div className={styles.dashboardRoot}>
         <nav className={styles.dashboardSidebar}>
           <DashboardSidebar handleAddBlock={handleAddBlock} />

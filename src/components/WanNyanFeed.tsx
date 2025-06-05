@@ -45,28 +45,31 @@ export default function WanNyanFeed() {
   };
 
   if (videos.length === 0) {
-    return <div style={{ color: "#333", textAlign: "center", marginTop: 80 }}>動画を読み込み中…</div>;
+    return <div className="text-center mt-16 text-gray-500">動画を読み込み中…</div>;
   }
 
   const v = videos[current];
 
-  // YouTube/Firestore 動画の自動切り替え
+  // 動画プレイヤー：レスポンシブサイズで表示
   const renderVideo = () => {
     if (v.type === "youtube") {
       return (
-        <iframe
-          width="100%"
-          height="80vh"
-          src={`https://www.youtube.com/embed/${v.url}?autoplay=1&mute=1&loop=1&playlist=${v.url}`}
-          title={v.title}
-          frameBorder={0}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          style={{
-            borderRadius: 8,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.15)"
-          }}
-        />
+        <div className="w-full aspect-video bg-black rounded-xl overflow-hidden">
+          <iframe
+            width="100%"
+            height="100%"
+            src={`https://www.youtube.com/embed/${v.url}?autoplay=1&mute=1&loop=1&playlist=${v.url}`}
+            title={v.title}
+            frameBorder={0}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+            style={{
+              borderRadius: 12,
+              background: "#000"
+            }}
+          />
+        </div>
       );
     }
     // Firestoreアップロード動画
@@ -77,12 +80,10 @@ export default function WanNyanFeed() {
         autoPlay
         loop
         muted
+        className="w-full aspect-video bg-black rounded-xl"
         style={{
-          width: "100vw",
-          height: "80vh",
           objectFit: "cover",
-          borderRadius: 8,
-          boxShadow: "0 4px 24px rgba(0,0,0,0.15)"
+          borderRadius: 12,
         }}
         playsInline
         preload="metadata"
@@ -91,80 +92,65 @@ export default function WanNyanFeed() {
   };
 
   return (
-    <section style={{ background: "#000", width: "100vw", minHeight: "90vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <section
+      className="
+        bg-gradient-to-b from-[#222c44] via-[#1d243a] to-[#18181b]
+        w-full flex flex-col items-center justify-center
+        py-10 sm:py-16 px-0
+        min-h-[60vw] sm:min-h-[340px] md:min-h-[450px]
+        transition-all
+      "
+    >
       <div
         tabIndex={0}
-        style={{
-          position: "relative",
-          width: "100vw",
-          height: "90vh",
-          overflow: "hidden",
-          background: "#000",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        className="
+          relative w-full max-w-xl sm:max-w-2xl lg:max-w-4xl
+          flex flex-col items-center justify-center
+          rounded-2xl shadow-xl
+          bg-black/40 backdrop-blur-md
+          overflow-hidden
+          p-0
+        "
         onWheel={handleWheel}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 0, left: 0, right: 0, bottom: 0,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            background: "rgba(0,0,0,0.35)",
-            zIndex: 2,
-          }}
-        >
-          {renderVideo()}
-          <div style={{
-            color: "#fff",
-            background: "rgba(25,35,73,0.65)",
-            width: "100vw",
-            padding: "16px 24px",
-            borderBottomLeftRadius: 8,
-            borderBottomRightRadius: 8,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between"
-          }}>
-            <div>
-              <div style={{ fontWeight: 700 }}>{v.title}</div>
-              <div style={{ fontSize: "1rem", marginTop: 6 }}>
-                ❤️ {v.likes}　💬 {v.comments}
-              </div>
+        {/* 動画本体 */}
+        {renderVideo()}
+        {/* 下部パネル */}
+        <div className="
+          w-full flex items-center justify-between
+          bg-gradient-to-t from-[#192349bb] to-transparent
+          px-4 sm:px-6 py-3 sm:py-4
+          rounded-b-2xl
+          backdrop-blur
+        ">
+          {/* 左：動画タイトル等 */}
+          <div>
+            <div className="font-bold text-white text-base sm:text-lg mb-1">{v.title}</div>
+            <div className="text-xs sm:text-sm text-blue-100">
+              ❤️ {v.likes}　💬 {v.comments}
             </div>
-            <div style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: 8,
-            }}>
-              <Image
-                src={v.profileIcon || "/wan_nyan_icon.png"}
-                width={46}
-                height={46}
-                style={{ borderRadius: "50%", border: "2px solid #fff" }}
-                alt={v.title + "のアイコン"}
-                unoptimized
-              />
-              <button style={{
-                marginTop: 8,
-                background: "#fff",
-                color: "#192349",
-                borderRadius: "18px",
-                border: "none",
-                fontWeight: 600,
-                padding: "4px 12px"
-              }}>フォロー</button>
-            </div>
+          </div>
+          {/* 右：アイコン＋フォローボタン */}
+          <div className="flex flex-col items-center gap-2">
+            <Image
+              src={v.profileIcon || "/wan_nyan_icon.png"}
+              width={40}
+              height={40}
+              className="rounded-full border-2 border-white shadow"
+              alt={v.title + "のアイコン"}
+              unoptimized
+            />
+            <button className="
+              mt-1 rounded-2xl px-4 py-1
+              bg-white text-[#192349] font-bold text-xs sm:text-sm shadow
+              hover:bg-blue-50 active:scale-95 transition
+            ">フォロー</button>
           </div>
         </div>
       </div>
+      {/* ページャー・インジケーターなど追加したい場合ここに */}
     </section>
   );
 }

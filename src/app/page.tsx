@@ -1,10 +1,13 @@
 // src/app/page.tsx
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import MegaMenu from "@/components/MegaMenu";
 import HeroLayout from "@/components/HeroLayout";
 import FooterSection from "@/components/FooterSection";
+import FloatingSearchButton from "@/components/FloatingSearchButton";
+import SearchModal from "@/components/SearchModal";
+import FloatBottomBar from "@/components/FloatBottomBar";
 
 // ログイン/新規登録ボタンのスタイル
 const authButtonStyle: React.CSSProperties = {
@@ -18,8 +21,10 @@ const authButtonStyle: React.CSSProperties = {
 };
 
 export default function HomePage() {
+  const [searchOpen, setSearchOpen] = useState(false);
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f8fafd]">
+    <div className="min-h-screen flex flex-col bg-[#f8fafd] relative">
       {/* ナビゲーション（メガメニュー） */}
       <MegaMenu />
 
@@ -66,6 +71,15 @@ export default function HomePage() {
 
       {/* フッター */}
       <FooterSection />
+
+      {/* PC/タブレット用 未来型フローティング検索ボタン */}
+      <FloatingSearchButton onClick={() => setSearchOpen(true)} />
+
+      {/* 検索モーダル（全デバイスで共通表示） */}
+      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+
+      {/* モバイル専用: 下部フロートバー/Drawer型UI */}
+      <FloatBottomBar />
     </div>
   );
 }
