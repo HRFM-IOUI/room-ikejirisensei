@@ -10,6 +10,7 @@ import SideMenu from "./SideMenu";
 import SearchButton from "./SearchButton";
 import SearchModal from "./SearchModal";
 
+// フッターやサイドバー幅
 const FOOTER_HEIGHT = 110;
 const SIDE_PANEL_WIDTH = 248;
 const SIDE_MARGIN = 8;
@@ -18,10 +19,18 @@ export default function HeroLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   return (
-    <div className="relative flex w-full min-h-[calc(100vh-180px)] mx-auto pt-10 pb-8">
-      {/* 左サイドパネル */}
+    <div
+      className="
+        relative w-full flex flex-col items-center
+        min-h-[calc(100vh-180px)] mx-auto pt-4 pb-8
+        sm:pt-10 sm:pb-8
+      "
+    >
+      {/* 左サイドパネル（PC/タブレットのみ） */}
       <div
-        className="hidden lg:flex flex-col items-center fixed z-30"
+        className="
+          hidden lg:flex flex-col items-center fixed z-30
+        "
         style={{
           top: 90,
           left: SIDE_MARGIN,
@@ -35,12 +44,16 @@ export default function HeroLayout() {
 
       {/* メイン中央 */}
       <div
-        className="flex-1 flex flex-col items-center mx-auto"
-        style={{
-          marginLeft: SIDE_PANEL_WIDTH + SIDE_MARGIN + 30,   // ← 8pxから-2px、右へ10px
-          marginRight: SIDE_PANEL_WIDTH + SIDE_MARGIN + 30, // ← 8pxから+18px、右へ10px
-          maxWidth: "1200px",
-        }}
+        className="
+          flex flex-col items-center w-full
+          max-w-full px-1
+          sm:px-2 md:px-4
+          lg:mx-auto lg:max-w-[1200px] lg:pl-[290px] lg:pr-[290px]
+          transition-all
+        "
+        // モバイル:左右余白なし
+        // タブレット:少し余白
+        // PC:中央寄せ・サイドバー分オフセット
       >
         <HeroSection />
         <Greeting />
@@ -48,9 +61,11 @@ export default function HeroLayout() {
         <SocialNewsTabs />
       </div>
 
-      {/* 右サイドパネル */}
+      {/* 右サイドパネル（PC/タブレットのみ） */}
       <div
-        className="hidden lg:flex flex-col fixed z-30 w-64"
+        className="
+          hidden lg:flex flex-col fixed z-30 w-64
+        "
         style={{
           top: 90,
           right: SIDE_MARGIN,
@@ -61,7 +76,7 @@ export default function HeroLayout() {
         <SideMenu />
       </div>
 
-      {/* 検索ボタン */}
+      {/* 検索ボタン（PC/タブレットのみ） */}
       <div
         className="hidden lg:block fixed z-50"
         style={{
