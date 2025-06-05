@@ -1,136 +1,45 @@
-.dashboardWrapper {
-  min-height: 100vh;
-  width: 100vw;
-  position: relative;
-  overflow-x: hidden;
-}
-
-/* 背景SVGが絶対下に来るように */
-.dashboardWrapper > *:not(:first-child) {
-  position: relative;
-  z-index: 1;
-}
-
-/* メインレイアウト中央寄せ */
-.dashboardRoot {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  align-items: flex-start;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 56px 0 96px 0;
-  min-height: 92vh;
-  gap: 40px;
-  box-sizing: border-box;
-}
-
-.dashboardSidebar {
-  min-width: 220px;
-  max-width: 240px;
-  padding: 32px 20px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(20,36,80,0.08);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-left: 1px; /* ←ビタ寄せ調整 */
-}
-
-.dashboardMain {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 900px;    /* ←幅広に！ */
-  padding: 44px 58px;  /* ←パネル内余白も増量 */
-  background: #fff;
-  border-radius: 16px;
-  min-height: 700px;
-  margin: 0 22px;
-  box-shadow: 0 4px 16px rgba(20,36,80,0.04);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: max-width 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-
-.dashboardRight {
-  min-width: 260px;
-  max-width: 300px;
-  padding: 36px 22px;
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 4px 16px rgba(20,36,80,0.11);
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.dashboardFooter {
-  width: 100%;
-  max-width: 1400px;
-  margin: 38px auto 0 auto;
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  background: none;
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 1200px) {
-  .dashboardRoot {
-    max-width: 99vw;
-    gap: 18px;
-    padding: 32px 0 64px 0;
-  }
-  .dashboardFooter {
-    max-width: 99vw;
-  }
-}
 @media (max-width: 1024px) {
   .dashboardRoot {
     flex-direction: column;
     align-items: stretch;
-    max-width: 99vw;
-    padding: 24px 0 32px 0;
+    max-width: 100vw;
+    padding: 12px 0 20px 0;
     gap: 0;
   }
   .dashboardSidebar,
   .dashboardRight,
   .dashboardMain {
-    max-width: 98vw;
-    margin: 18px auto;
+    max-width: 100vw;
+    margin: 10px 0;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(20,36,80,0.08);
-    padding: 24px 8vw;
+    padding: 14px 3vw;
   }
   .dashboardMain {
-    padding: 24px 6vw;
-    max-width: 99vw;
+    padding: 18px 3vw;
+    max-width: 100vw;
   }
   .dashboardFooter {
-    max-width: 98vw;
-    margin: 16px auto 0 auto;
-    gap: 14px;
+    max-width: 100vw;
+    margin: 8px auto 0 auto;
+    gap: 8px;
+    padding: 0 2vw;
   }
 }
-
 @media (max-width: 600px) {
-  .dashboardRoot {
-    padding: 0;
-  }
   .dashboardSidebar,
   .dashboardRight,
   .dashboardMain {
-    padding: 10px 1vw;
-    margin: 8px 0;
+    padding: 7px 1vw;
+    margin: 5px 0;
   }
   .dashboardMain {
-    max-width: 99vw;
-    padding: 10px 2vw;
+    max-width: 100vw;
+    padding: 9px 1vw;
   }
   .dashboardFooter {
-    margin: 8px 0 0 0;
-    gap: 8px;
+    margin: 4px 0 0 0;
+    gap: 6px;
+    padding: 0 1vw;
   }
 }
