@@ -1,15 +1,14 @@
 "use client";
 import { useState } from "react";
-import { FaUserFriends, FaSearch, FaBars, FaUniversalAccess } from "react-icons/fa";
+import { FaSearch, FaBars, FaUniversalAccess } from "react-icons/fa";
 import * as Dialog from "@radix-ui/react-dialog";
-import CitizenPanel from "./CitizenPanel";
 import AccessibilityPanel from "./AccessibilityPanel";
 import SideMenu from "./SideMenu";
 import SearchModal from "./SearchModal";
 
 // スマホ・タブレットでのみ表示
 export default function FloatBottomBar() {
-  const [openMenu, setOpenMenu] = useState<null | "citizen" | "access" | "menu" | "search">(null);
+  const [openMenu, setOpenMenu] = useState<null | "access" | "menu" | "search">(null);
 
   return (
     <div
@@ -27,23 +26,6 @@ export default function FloatBottomBar() {
       "
       style={{ opacity: 0.96 }}
     >
-      {/* 市民Drawer */}
-      <Dialog.Root open={openMenu === "citizen"} onOpenChange={v => setOpenMenu(v ? "citizen" : null)}>
-        <Dialog.Trigger asChild>
-          <button className="flex flex-col items-center group" aria-label="市民パネル">
-            <FaUserFriends size={26} className="mb-1 text-[#192349] group-hover:scale-110 transition" />
-            <span className="text-xs">市民</span>
-          </button>
-        </Dialog.Trigger>
-        <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 z-[200] bg-black/40 backdrop-blur-sm animate-fadeIn" />
-          <Dialog.Content className="fixed z-[201] left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-            bg-white rounded-3xl shadow-2xl w-full max-w-xs p-6 animate-fadeInUp">
-            <button onClick={() => setOpenMenu(null)} className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-black">×</button>
-            <CitizenPanel />
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
       {/* アクセシビリティDrawer */}
       <Dialog.Root open={openMenu === "access"} onOpenChange={v => setOpenMenu(v ? "access" : null)}>
         <Dialog.Trigger asChild>
