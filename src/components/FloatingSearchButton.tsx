@@ -9,19 +9,19 @@ export default function FloatingSearchButton({ onClick }: { onClick: () => void 
   // スクロール・タッチなどで自動フェード
   useEffect(() => {
     let lastScroll = window.scrollY;
-    let timeout: any = null;
+    let timeout: number | null = null;
     const onScroll = () => {
       if (Math.abs(window.scrollY - lastScroll) > 12) {
         setHidden(true);
-        clearTimeout(timeout);
-        timeout = setTimeout(() => setHidden(false), 1100);
+        if (timeout !== null) clearTimeout(timeout);
+        timeout = window.setTimeout(() => setHidden(false), 1100);
         lastScroll = window.scrollY;
       }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);
-      clearTimeout(timeout);
+      if (timeout !== null) clearTimeout(timeout);
     };
   }, []);
 
