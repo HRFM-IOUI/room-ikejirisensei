@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import HeroSection from "./HeroSection";
 import Greeting from "./Greeting";
 import WanNyanFeed from "./WanNyanFeed";
@@ -12,9 +12,32 @@ import SearchModal from "./SearchModal";
 
 const FOOTER_HEIGHT = 110;
 const SIDE_MARGIN = 8;
+const SIDE_PANEL_WIDTH = 256; // px
 
 export default function HeroLayout() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // クライアント幅をstateで管理
+  const [clientWidth, setClientWidth] = useState<number | null>(null);
+
+  useEffect(() => {
+    // クライアントマウント後のみwindowが使える
+    function handleResize() {
+      setClientWidth(window.innerWidth);
+    }
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // PC時だけ左右パディングをつける
+  const mainStyle =
+    clientWidth !== null && clientWidth >= 1024
+      ? {
+          paddingLeft: SIDE_PANEL_WIDTH + SIDE_MARGIN,
+          paddingRight: SIDE_PANEL_WIDTH + SIDE_MARGIN,
+        }
+      : {};
 
   return (
     <div
@@ -48,6 +71,8 @@ export default function HeroLayout() {
         style={{
           top: 90,
           left: SIDE_MARGIN,
+          width: SIDE_PANEL_WIDTH,
+          maxWidth: SIDE_PANEL_WIDTH,
           maxHeight: `calc(100vh - ${FOOTER_HEIGHT + 24}px)`,
           overflowY: "auto",
         }}
@@ -62,9 +87,10 @@ export default function HeroLayout() {
           flex flex-col items-center w-full
           max-w-full px-1
           sm:px-2 md:px-4
-          lg:mx-auto lg:max-w-[1200px] lg:pl-[290px] lg:pr-[290px]
+          lg:mx-auto lg:max-w-[1500px]
           transition-all
         "
+        style={mainStyle}
       >
         <HeroSection />
         <Greeting />
@@ -75,11 +101,13 @@ export default function HeroLayout() {
       {/* 右サイドパネル（PC/タブレットのみ） */}
       <div
         className="
-          hidden lg:flex flex-col fixed z-30 w-64
+          hidden lg:flex flex-col fixed z-30
         "
         style={{
           top: 90,
           right: SIDE_MARGIN,
+          width: SIDE_PANEL_WIDTH,
+          maxWidth: SIDE_PANEL_WIDTH,
           maxHeight: `calc(100vh - ${FOOTER_HEIGHT + 24}px)`,
           overflowY: "auto",
         }}
