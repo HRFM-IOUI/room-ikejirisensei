@@ -10,9 +10,7 @@ import SideMenu from "./SideMenu";
 import SearchButton from "./SearchButton";
 import SearchModal from "./SearchModal";
 
-// フッターやサイドバー幅
 const FOOTER_HEIGHT = 110;
-const SIDE_PANEL_WIDTH = 248;
 const SIDE_MARGIN = 8;
 
 export default function HeroLayout() {
@@ -51,9 +49,6 @@ export default function HeroLayout() {
           lg:mx-auto lg:max-w-[1200px] lg:pl-[290px] lg:pr-[290px]
           transition-all
         "
-        // モバイル:左右余白なし
-        // タブレット:少し余白
-        // PC:中央寄せ・サイドバー分オフセット
       >
         <HeroSection />
         <Greeting />
