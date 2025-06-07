@@ -1,0 +1,121 @@
+.carousel-tabs-bar-outer {
+  width: 100vw;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 11;
+  padding: 0 0 10px 0;
+}
+.carousel-tabs-bar-inner {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  background: none;
+}
+.carousel-tabs-horizontal {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  background: #171e23;
+  border-radius: 18px 18px 0 0;
+  overflow-x: auto;
+  margin-bottom: 0;
+  box-shadow: 0 2px 18px #101c26c4;
+  scrollbar-width: thin;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+}
+.carousel-tab-card {
+  position: relative;
+  background: #141b17;
+  color: #6fffb0;
+  font-weight: 700;
+  font-size: 17px;
+  padding: 14px 38px 12px 38px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  transition: color .2s, background .2s, transform .19s;
+  z-index: 1;
+  overflow: hidden;
+  letter-spacing: 1.1px;
+  min-width: 112px;
+  text-align: center;
+  scroll-snap-align: center;
+}
+.carousel-tab-card:not(.active):hover {
+  background: #183c24;
+  color: #a9ffcb;
+}
+.carousel-tab-card.active {
+  color: #e8ffe2;
+  background: #101e16;
+  border-bottom: 4px solid #1bdc82;
+  z-index: 2;
+}
+.carousel-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  min-width: 38px;
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #1bdc82;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  margin: 0 6px;
+  user-select: none;
+  transition: background 0.14s, color 0.12s;
+}
+.carousel-arrow:hover {
+  background: #19ff6335;
+  color: #fff;
+}
+
+/* スマホ：ドロップダウン */
+.carousel-tabs-dropdown {
+  width: 98vw;
+  max-width: 500px;
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 auto 10px auto;
+  border-radius: 14px;
+  border: 2px solid #2de376;
+  padding: 12px 14px;
+  background: #181822;
+  color: #7cf2b7;
+  outline: none;
+  appearance: none;
+  text-align: center;
+  box-shadow: 0 1.5px 9px #101c26a0;
+  letter-spacing: 1.1px;
+}
+
+/* スマホレスポンシブ */
+@media (max-width: 600px) {
+  .carousel-tabs-bar-outer {
+    max-width: 100vw;
+    padding: 0 0 5px 0;
+  }
+  .carousel-tabs-bar-inner {
+    padding: 0 2vw;
+  }
+  .carousel-tabs-horizontal {
+    display: none;
+  }
+  .carousel-arrow {
+    display: none;
+  }
+  .carousel-tabs-dropdown {
+    display: block;
+  }
+}
+@media (min-width: 601px) {
+  .carousel-tabs-dropdown {
+    display: none;
+  }
+}

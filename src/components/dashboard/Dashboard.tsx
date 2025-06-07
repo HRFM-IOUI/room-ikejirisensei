@@ -1,211 +1,420 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import styles from "./Dashboard.module.css";
+import DashboardCarouselTabs from "./DashboardCarouselTabs";
+import DashboardColorPicker from "./DashboardColorPicker";
+import MatrixLanguageRain from "./MatrixLanguageRain";
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/effect-fade";
+import "swiper/css/navigation";
+import "./DashboardCarouselTabs.css";
+import ArticleEditor from "./ArticleEditor";
 import DashboardSidebar from "./DashboardSidebar";
-import DashboardHeader from "./DashboardHeader";
-import DashboardMain from "./DashboardMain";
 import DashboardRightPanel from "./DashboardRightPanel";
 import DashboardFooter from "./DashboardFooter";
 import FullscreenEditorModal from "./FullscreenEditorModal";
-import DashboardBackground from "./DashboardBackground"; // ★追加！
+import PreviewModal from "./PreviewModal";
+import VideoEditor from "./VideoEditor";
+import MediaLibrary from "./MediaLibrary"; // ←追加
+import { EffectFade } from "swiper/modules";
 import {
+  createBlock,
+  Block,
+  BlockType,
   FONT_OPTIONS,
   FONT_SIZE_OPTIONS,
   COLOR_PRESETS,
   BG_COLOR_PRESETS,
-  createBlock,
-  Block,
-  BlockType,
 } from "./dashboardConstants";
-import { addPost } from "../../utils/firestore";
-import type { Post } from "../../types/post";
 
-// プレースホルダー色をカスタムするユーティリティ
-const placeholderColor = "#192349";
+import { db } from "@/firebase";
+import { collection, addDoc, getDocs, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { useRouter } from "next/navigation";
 
-// 投稿モーダルUI型宣言
-type PostModalProps = {
-  open: boolean;
+// 記事リスト用型
+type ArticleListItem = {
+  id: string;
   title: string;
-  setTitle: React.Dispatch<React.SetStateAction<string>>;
-  image: string;
-  setImage: React.Dispatch<React.SetStateAction<string>>;
-  onSubmit: () => void;
-  onClose: () => void;
+  createdAt?: any;
+  blocks: Block[];
 };
 
-function PostModal({ open, title, setTitle, image, setImage, onSubmit, onClose }: PostModalProps) {
-  if (!open) return null;
-  return (
-    <div style={{
-      position: "fixed", inset: 0, background: "rgba(24,28,44,0.18)", zIndex: 9999,
-      display: "flex", alignItems: "center", justifyContent: "center"
-    }}>
-      <div style={{
-        minWidth: 380, padding: "36px 42px", background: "#fff", borderRadius: 22,
-        boxShadow: "0 8px 44px 0 rgba(20,24,72,0.22)", display: "flex", flexDirection: "column",
-        gap: 18, alignItems: "center", position: "relative"
-      }}>
-        {/* プレースホルダー色だけCSS in JSで制御 */}
-        <style>{`
-          .customPlaceholder::placeholder { color: ${placeholderColor}; opacity: 1; }
-        `}</style>
-        <button
-          onClick={onClose}
-          style={{
-            position: "absolute", top: 16, right: 24, border: "none", background: "transparent",
-            fontSize: 32, color: "#777", cursor: "pointer", lineHeight: 1, fontWeight: 400, opacity: 0.7,
-          }}
-          aria-label="閉じる"
-        >×</button>
-        <div style={{ fontWeight: 900, fontSize: 22, color: "#192349", letterSpacing: 2 }}>
-          記事のタイトルとサムネ画像
-        </div>
-        <input
-          type="text"
-          placeholder="タイトル（必須）"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          className="customPlaceholder"
-          style={{ width: "100%", padding: 8, fontSize: 17, borderRadius: 8, border: "1px solid #ccc", color: "#192349" }}
-        />
-        <input
-          type="text"
-          placeholder="サムネ画像URL（任意・空欄OK）"
-          value={image}
-          onChange={e => setImage(e.target.value)}
-          className="customPlaceholder"
-          style={{ width: "100%", padding: 8, fontSize: 15, borderRadius: 8, border: "1px solid #ccc", color: "#192349" }}
-        />
-        <button
-          onClick={onSubmit}
-          style={{
-            marginTop: 14, borderRadius: 11, padding: "12px 24px", background: "#1818e3",
-            color: "#fff", fontWeight: 700, fontSize: 19, border: "none", letterSpacing: 1.1, cursor: "pointer"
-          }}
-          disabled={!title.trim()}
-        >記事を投稿する</button>
-      </div>
-    </div>
-  );
-}
+const TABS = [
+  { key: "articles", label: "記事投稿" },
+  { key: "edit", label: "記事編集" },
+  { key: "videos", label: "動画投稿" },
+  { key: "articlesList", label: "記事一覧" },
+  { key: "videosList", label: "動画一覧" },
+  { key: "members", label: "会員管理" },
+  { key: "community", label: "コミュニティ" },
+  { key: "media", label: "メディアライブラリ" },  // ←ここ
+  { key: "analytics", label: "アナリティクス" },
+];
+
+const TAB_COLORS = [
+  "#00FF00", "#00D1FF", "#FFD700", "#FF00B8", "#FF4500", "#1a1aff", "#192349", "#fff"
+];
 
 export default function Dashboard() {
+  const [activeTab, setActiveTab] = useState<string>(TABS[0].key);
+  const [selectedColor, setSelectedColor] = useState<string>(TAB_COLORS[0]);
+  const swiperRef = useRef<any>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [postTitle, setPostTitle] = useState("");
-  const [postThumbnail, setPostThumbnail] = useState("");
-  const [isPosting, setIsPosting] = useState(false);
   const [fullscreenEdit, setFullscreenEdit] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
+  // 記事編集用
+  const [articleList, setArticleList] = useState<ArticleListItem[]>([]);
+  const [editBlocks, setEditBlocks] = useState<Block[]>([]);
+  const [editDocId, setEditDocId] = useState<string | null>(null);
+  const [loadingArticles, setLoadingArticles] = useState(false);
+  const [selectedArticleIdx, setSelectedArticleIdx] = useState<number>(0);
+
+  const router = useRouter();
+
+  // 記事リストを取得
+  useEffect(() => {
+    if (activeTab === "edit") {
+      setLoadingArticles(true);
+      getDocs(collection(db, "posts")).then(snapshot => {
+        const list: ArticleListItem[] = snapshot.docs.map(doc => ({
+          id: doc.id,
+          title: (doc.data().blocks?.[0]?.content?.slice(0, 20) || "無題記事"),
+          createdAt: doc.data().createdAt,
+          blocks: doc.data().blocks || [],
+        }));
+        setArticleList(list);
+        if (list.length > 0) {
+          setSelectedArticleIdx(0);
+          setEditBlocks(list[0].blocks);
+          setEditDocId(list[0].id);
+        } else {
+          setEditBlocks([]);
+          setEditDocId(null);
+        }
+        setLoadingArticles(false);
+      });
+    }
+  }, [activeTab]);
+
+  // 記事リストの選択切替
+  const handleSelectArticle = (idx: number) => {
+    const article = articleList[idx];
+    setSelectedArticleIdx(idx);
+    setEditBlocks(article.blocks);
+    setEditDocId(article.id);
+  };
+
+  // 編集保存
+  const handleEditSave = async (updatedBlocks: Block[]) => {
+    if (!editDocId) {
+      alert("編集対象の記事がありません。");
+      return;
+    }
+    try {
+      await updateDoc(doc(db, "posts", editDocId), {
+        blocks: updatedBlocks,
+        updatedAt: serverTimestamp()
+      });
+      alert("編集内容を保存しました！");
+      setEditBlocks(updatedBlocks);
+      setArticleList(list =>
+        list.map((item, idx) =>
+          idx === selectedArticleIdx ? { ...item, blocks: updatedBlocks } : item
+        )
+      );
+    } catch (e) {
+      alert("保存エラー: " + (e as Error).message);
+    }
+  };
+
+  // 記事投稿系
   const handleAddBlock = (type: BlockType) => {
     setBlocks([...blocks, createBlock(type)]);
   };
   const handleEditBlock = (id: string, value: string) => {
-    setBlocks(bs => bs.map(b => (b.id === id ? { ...b, content: value } : b)));
+    setBlocks(bs => bs.map(b => b.id === id ? { ...b, content: value } : b));
+  };
+  const handleBlockStyle = (id: string, style: Partial<Block['style']>) => {
+    setBlocks(bs => bs.map(b => b.id === id ? { ...b, style: { ...b.style, ...style } } : b));
   };
   const handleDelete = (id: string) => {
     setBlocks(bs => bs.filter(b => b.id !== id));
     if (selectedId === id) setSelectedId(null);
   };
-  const handleDragEnd = (oldIndex: number, newIndex: number) => {
-    if (oldIndex === newIndex) return;
-    setBlocks(bs => {
-      const moved = [...bs];
-      const [item] = moved.splice(oldIndex, 1);
-      moved.splice(newIndex, 0, item);
-      return moved;
-    });
-  };
-  const handlePost = async () => {
-    if (!postTitle.trim() || blocks.length === 0) {
-      alert("タイトルと本文（ブロック）が必要です。");
-      return;
+
+  const handleTabChange = (tabKey: string) => {
+    const idx = TABS.findIndex(t => t.key === tabKey);
+    setActiveTab(tabKey);
+    if (swiperRef.current) {
+      swiperRef.current.slideTo(idx);
     }
-    setIsPosting(true);
-    try {
-      const content = blocks.map(b => b.content).join("\n\n");
-      const newPost: Omit<Post, "id" | "date"> = {
-        title: postTitle,
-        content,
-        image: postThumbnail || "/logo.png",
-      };
-      await addPost(newPost);
-      alert("記事を投稿しました！");
-      setBlocks([]);
-      setPostTitle("");
-      setPostThumbnail("");
-      setShowPostModal(false);
-    } catch {
-      alert("投稿に失敗しました。");
-    }
-    setIsPosting(false);
   };
-  const handleOpenPostModal = () => setShowPostModal(true);
-  const handleFullscreenSave = (val: string) => {
-    if (selectedId) handleEditBlock(selectedId, val);
+  const handleSlideChange = (swiper: any) => {
+    const idx = swiper.activeIndex;
+    setActiveTab(TABS[idx].key);
+  };
+
+  const selectedBlock = blocks.find(b => b.id === selectedId);
+
+  const handleSaveFullscreen = (value: string) => {
+    if (selectedBlock) {
+      handleEditBlock(selectedBlock.id, value);
+    }
     setFullscreenEdit(false);
   };
 
+  const handlePublish = async () => {
+    try {
+      await addDoc(collection(db, "posts"), {
+        blocks,
+        createdAt: serverTimestamp(),
+        status: "published"
+      });
+      alert("記事を公開しました！");
+      setBlocks([]);
+      setSelectedId(null);
+    } catch (e) {
+      alert("投稿エラー:" + (e as Error).message);
+    }
+  };
+  const handleSaveDraft = async () => {
+    try {
+      await addDoc(collection(db, "posts"), {
+        blocks,
+        createdAt: serverTimestamp(),
+        status: "draft"
+      });
+      alert("下書きを保存しました！");
+    } catch (e) {
+      alert("保存エラー:" + (e as Error).message);
+    }
+  };
+  const handlePreview = () => {
+    setPreviewOpen(true);
+  };
+
+  const handleGoTop = () => {
+    router.push("/");
+  };
+
+  const isWhiteTheme = selectedColor === "#fff" || selectedColor?.toLowerCase() === "white";
+
   return (
-    <div className={styles.dashboardWrapper}>
-      <DashboardBackground /> {/* ← 背景を最初の子に追加 */}
-      <div className={styles.dashboardRoot}>
-        <nav className={styles.dashboardSidebar}>
-          <DashboardSidebar handleAddBlock={handleAddBlock} />
-        </nav>
-        <main className={styles.dashboardMain}>
-          <DashboardHeader />
-          <DashboardMain
-            blocks={blocks}
-            selectedId={selectedId}
-            setSelectedId={setSelectedId}
-            handleEditBlock={handleEditBlock}
-            handleDelete={handleDelete}
-            handleDragEnd={handleDragEnd}
-          />
-          <div style={{ textAlign: "center", marginTop: 40 }}>
-            <button
-              onClick={handleOpenPostModal}
-              className="px-10 py-3 bg-blue-700 text-white font-bold rounded-xl hover:bg-blue-900 transition"
-              style={{ fontSize: 20 }}
-              disabled={blocks.length === 0 || isPosting}
-            >
-              記事を投稿する
-            </button>
-          </div>
-        </main>
-        <aside className={styles.dashboardRight}>
-          <DashboardRightPanel
-            selectedBlock={blocks.find(b => b.id === selectedId)}
-            handleBlockStyle={() => { }}
-            FONT_OPTIONS={FONT_OPTIONS}
-            FONT_SIZE_OPTIONS={FONT_SIZE_OPTIONS}
-            COLOR_PRESETS={COLOR_PRESETS}
-            BG_COLOR_PRESETS={BG_COLOR_PRESETS}
-            onFullscreenEdit={() => setFullscreenEdit(true)}
-          />
-        </aside>
+    <div className={styles.dashboardWrapper} style={{ background: isWhiteTheme ? "#fff" : undefined }}>
+      {/* 背景 */}
+      {!isWhiteTheme && <MatrixLanguageRain color={selectedColor} />}
+      {/* ヘッダー部 */}
+      <div style={{ padding: "34px 0 10px 0", zIndex: 2, position: "relative" }}>
+        <DashboardCarouselTabs
+          tabs={TABS}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          color={selectedColor}
+        />
+        <div style={{
+          marginTop: 24,
+          textAlign: "right",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          justifyContent: "flex-end"
+        }}>
+          <DashboardColorPicker color={selectedColor} onChange={setSelectedColor} />
+          <button
+            onClick={handleGoTop}
+            style={{
+              marginLeft: 18,
+              background: "#fff",
+              color: "#192349",
+              fontWeight: 800,
+              fontSize: 16,
+              border: "2px solid #192349",
+              borderRadius: 12,
+              padding: "12px 24px",
+              boxShadow: "0 2px 18px #19234918",
+              cursor: "pointer",
+              transition: "background .16s",
+              minWidth: 90
+            }}
+          >トップに戻る</button>
+        </div>
       </div>
-      <footer className={styles.dashboardFooter}>
-        <DashboardFooter />
-      </footer>
-      <PostModal
-        open={showPostModal}
-        title={postTitle}
-        setTitle={setPostTitle}
-        image={postThumbnail}
-        setImage={setPostThumbnail}
-        onSubmit={handlePost}
-        onClose={() => setShowPostModal(false)}
-      />
-      <FullscreenEditorModal
-        open={fullscreenEdit}
-        value={selectedId ? blocks.find(b => b.id === selectedId)?.content ?? "" : ""}
-        onClose={() => setFullscreenEdit(false)}
-        onSave={handleFullscreenSave}
-      />
+      {/* メイン */}
+      <div className={styles.carouselContainer}>
+        <Swiper
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          speed={650}
+          onSwiper={swiper => { swiperRef.current = swiper; }}
+          onSlideChange={handleSlideChange}
+          slidesPerView={1}
+          allowTouchMove={true}
+          className="dashboard-swiper"
+          modules={[EffectFade]}
+        >
+          {/* 記事投稿タブ */}
+          <SwiperSlide>
+            <div className={styles.dashboardRoot}>
+              <DashboardSidebar handleAddBlock={handleAddBlock} />
+              <div className={styles.dashboardMain}>
+                <ArticleEditor
+                  blocks={blocks}
+                  selectedId={selectedId}
+                  setSelectedId={setSelectedId}
+                  handleEditBlock={handleEditBlock}
+                  handleDelete={handleDelete}
+                />
+                <DashboardFooter
+                  onPublish={handlePublish}
+                  onSaveDraft={handleSaveDraft}
+                  onPreview={handlePreview}
+                />
+                <PreviewModal
+                  open={previewOpen}
+                  blocks={blocks}
+                  onClose={() => setPreviewOpen(false)}
+                />
+              </div>
+              <DashboardRightPanel
+                selectedBlock={selectedBlock}
+                handleBlockStyle={handleBlockStyle}
+                FONT_OPTIONS={FONT_OPTIONS}
+                FONT_SIZE_OPTIONS={FONT_SIZE_OPTIONS}
+                COLOR_PRESETS={COLOR_PRESETS}
+                BG_COLOR_PRESETS={BG_COLOR_PRESETS}
+                onFullscreenEdit={() => setFullscreenEdit(true)}
+              />
+              {selectedBlock && (
+                <FullscreenEditorModal
+                  open={fullscreenEdit}
+                  value={selectedBlock.content}
+                  fontFamily={selectedBlock.style?.fontFamily}
+                  fontSize={selectedBlock.style?.fontSize}
+                  color={selectedBlock.style?.color}
+                  onClose={() => setFullscreenEdit(false)}
+                  onSave={handleSaveFullscreen}
+                />
+              )}
+            </div>
+          </SwiperSlide>
+          {/* 記事編集タブ */}
+          <SwiperSlide>
+            <div className={styles.dashboardRoot}>
+              {/* 記事リスト */}
+              <div
+                style={{
+                  minWidth: 220,
+                  maxWidth: 260,
+                  background: "#fff",
+                  borderRadius: 14,
+                  boxShadow: "0 4px 16px rgba(20,36,80,0.10)",
+                  padding: 22,
+                  marginRight: 26,
+                  marginTop: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 12,
+                  height: "100%",
+                  minHeight: 320
+                }}
+              >
+                <div style={{ fontWeight: 900, fontSize: 18, color: "#192349", marginBottom: 12 }}>
+                  記事一覧
+                </div>
+                {loadingArticles ? (
+                  <div style={{ color: "#aaa" }}>読み込み中...</div>
+                ) : articleList.length === 0 ? (
+                  <div style={{ color: "#888" }}>記事がありません。</div>
+                ) : (
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                    {articleList.map((item, idx) => (
+                      <li
+                        key={item.id}
+                        onClick={() => handleSelectArticle(idx)}
+                        style={{
+                          padding: "7px 8px",
+                          marginBottom: 7,
+                          background: idx === selectedArticleIdx ? "#e7f5ff" : "#f5f8fb",
+                          borderRadius: 8,
+                          fontWeight: idx === selectedArticleIdx ? 800 : 600,
+                          color: "#192349",
+                          fontSize: 15,
+                          cursor: "pointer",
+                          border: idx === selectedArticleIdx ? "2.5px solid #5b8dee" : "1px solid #e2e7ef",
+                          transition: "background .17s, border .17s"
+                        }}
+                      >
+                        {item.title}
+                        <span style={{
+                          fontSize: 12, color: "#aaa", marginLeft: 8,
+                          fontWeight: 400
+                        }}>
+                          {item.createdAt?.toDate
+                            ? item.createdAt.toDate().toLocaleString()
+                            : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              {/* 編集エディタ */}
+              <div className={styles.dashboardMain}>
+                <ArticleEditor
+                  blocks={editBlocks}
+                  isEditMode
+                  onSave={handleEditSave}
+                />
+              </div>
+            </div>
+          </SwiperSlide>
+          {/* 動画投稿タブ */}
+          <SwiperSlide>
+            <div className={styles.dashboardRoot}>
+              <div className={styles.dashboardMain}>
+                <VideoEditor />
+              </div>
+            </div>
+          </SwiperSlide>
+          {/* 記事一覧タブ */}
+          <SwiperSlide>
+            <div className="carousel-pane glitch-effect">
+              記事一覧（仮実装）
+            </div>
+          </SwiperSlide>
+          {/* 動画一覧タブ */}
+          <SwiperSlide>
+            <div className="carousel-pane glitch-effect">
+              動画一覧（仮実装）
+            </div>
+          </SwiperSlide>
+          {/* 会員管理タブ */}
+          <SwiperSlide>
+            <div className="carousel-pane glitch-effect">
+              会員管理（仮実装）
+            </div>
+          </SwiperSlide>
+          {/* コミュニティタブ */}
+          <SwiperSlide>
+            <div className="carousel-pane glitch-effect">
+              コミュニティ管理（仮実装）
+            </div>
+          </SwiperSlide>
+          {/* メディアライブラリ */}
+          <SwiperSlide>
+            <MediaLibrary />
+          </SwiperSlide>
+          {/* アナリティクス */}
+          <SwiperSlide>
+            <div className="carousel-pane glitch-effect">
+              アナリティクス（仮実装）
+            </div>
+          </SwiperSlide>
+        </Swiper>
+      </div>
     </div>
   );
 }
