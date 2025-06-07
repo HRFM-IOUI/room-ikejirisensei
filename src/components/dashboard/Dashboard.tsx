@@ -1,4 +1,4 @@
-"use client";
+"use client"; 
 import React, { useState, useRef, useEffect } from "react";
 import styles from "./Dashboard.module.css";
 import DashboardCarouselTabs from "./DashboardCarouselTabs";
@@ -17,7 +17,7 @@ import DashboardFooter from "./DashboardFooter";
 import FullscreenEditorModal from "./FullscreenEditorModal";
 import PreviewModal from "./PreviewModal";
 import VideoEditor from "./VideoEditor";
-import MediaLibrary from "./MediaLibrary"; // ←追加
+import MediaLibrary from "./MediaLibrary";
 import { EffectFade } from "swiper/modules";
 import {
   createBlock,
@@ -37,7 +37,7 @@ import { useRouter } from "next/navigation";
 type ArticleListItem = {
   id: string;
   title: string;
-  createdAt?: any;
+  createdAt?: Date | { toDate(): Date }; // ← ここを any→Date|toDate()型に
   blocks: Block[];
 };
 
@@ -49,7 +49,7 @@ const TABS = [
   { key: "videosList", label: "動画一覧" },
   { key: "members", label: "会員管理" },
   { key: "community", label: "コミュニティ" },
-  { key: "media", label: "メディアライブラリ" },  // ←ここ
+  { key: "media", label: "メディアライブラリ" },
   { key: "analytics", label: "アナリティクス" },
 ];
 
@@ -353,9 +353,11 @@ export default function Dashboard() {
                           fontSize: 12, color: "#aaa", marginLeft: 8,
                           fontWeight: 400
                         }}>
-                          {item.createdAt?.toDate
-                            ? item.createdAt.toDate().toLocaleString()
-                            : ""}
+                          {item.createdAt && typeof item.createdAt === "object" && "toDate" in item.createdAt
+                            ? (item.createdAt as { toDate(): Date }).toDate().toLocaleString()
+                            : item.createdAt instanceof Date
+                              ? item.createdAt.toLocaleString()
+                              : ""}
                         </span>
                       </li>
                     ))}
