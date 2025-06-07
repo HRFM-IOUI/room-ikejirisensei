@@ -22,7 +22,7 @@ export default function DashboardCarouselTabs({
   // テーマが白か判定
   const isWhiteTheme = color === "#fff" || color.toLowerCase() === "white";
 
-  // 中央寄せ
+  // タブ中央寄せ
   useEffect(() => {
     if (containerRef.current && activeIndex >= 0) {
       const tabEl = containerRef.current.querySelectorAll<HTMLDivElement>(".carousel-tab-card")[activeIndex];
@@ -37,7 +37,7 @@ export default function DashboardCarouselTabs({
     }
   }, [activeIndex, tabs.length]);
 
-  // モバイル
+  // モバイル判定
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 600);
@@ -49,7 +49,7 @@ export default function DashboardCarouselTabs({
   // ドロップダウン
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // グリッチ／カルーセルデザインは絶対維持
+  // グリッチ／カルーセルデザイン維持
   const getTabStyle = (isActive: boolean): React.CSSProperties =>
     isWhiteTheme
       ? {
@@ -90,13 +90,13 @@ export default function DashboardCarouselTabs({
           borderRadius: 13,
           cursor: "pointer",
           letterSpacing: 1.15,
-          textAlign: "center" as const,
+          textAlign: "center",
           userSelect: "none",
           transition: "all .22s cubic-bezier(0.44,1.54,.85,1)",
           zIndex: isActive ? 3 : 1,
           outline: isActive ? `2px solid ${color}` : "none",
           border: "none",
-          position: "relative" as const,
+          position: "relative",
         };
 
   // --- レンダリング ---
@@ -183,7 +183,7 @@ export default function DashboardCarouselTabs({
     );
   }
 
-  // デスクトップ・カルーセルタブ（演出維持、白テーマ時だけ配色反映）
+  // デスクトップ・カルーセルタブ
   return (
     <nav
       className="carousel-tabs-bg"
@@ -221,7 +221,6 @@ export default function DashboardCarouselTabs({
             aria-current={activeTab === tab.key ? "page" : undefined}
           >
             {tab.label}
-            {/* 残像・グリッチ・光演出はclassとcss側で維持 */}
             {!isWhiteTheme && (
               <div className="carouselPanelGlitch" />
             )}

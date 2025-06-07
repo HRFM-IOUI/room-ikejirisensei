@@ -51,6 +51,7 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
           }}
           onClick={onClose}
           aria-label="閉じる"
+          type="button"
         >
           ×
         </button>
@@ -69,7 +70,7 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
                     style={{
                       fontFamily: block.style?.fontFamily || "'Noto Sans JP', sans-serif",
                       fontSize: block.style?.fontSize || "2.1rem",
-                      fontWeight: block.style?.fontWeight || 700,
+                      fontWeight: block.style?.fontWeight ?? 700,
                       color: block.style?.color || "#222",
                       background: block.style?.backgroundColor || "transparent",
                       padding: "8px 0 2px 0",
@@ -89,7 +90,7 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
                     style={{
                       fontFamily: block.style?.fontFamily || "'Noto Sans JP', sans-serif",
                       fontSize: block.style?.fontSize || "1.15rem",
-                      fontWeight: block.style?.fontWeight || 500,
+                      fontWeight: block.style?.fontWeight ?? 500,
                       color: block.style?.color || "#2d3144",
                       background: block.style?.backgroundColor || "transparent",
                       margin: "10px 0 18px 0",

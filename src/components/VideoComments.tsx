@@ -1,18 +1,33 @@
 'use client';
 import React, { useEffect, useState } from "react";
 import { db } from "../firebase";
-import { collection, addDoc, query, where, orderBy, getDocs, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  getDocs,
+  serverTimestamp,
+  QueryDocumentSnapshot,
+  DocumentData,
+  Timestamp
+} from "firebase/firestore";
 
 type Comment = {
   id: string;
   text: string;
-  createdAt: any;
+  createdAt: Timestamp | null;
 };
 
-export default function VideoComments({ videoId }: { videoId: string }) {
+interface VideoCommentsProps {
+  videoId: string;
+}
+
+export default function VideoComments({ videoId }: VideoCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([]);
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [text, setText] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   // コメント取得
   useEffect(() => {
@@ -23,13 +38,22 @@ export default function VideoComments({ videoId }: { videoId: string }) {
         orderBy("createdAt", "asc")
       );
       const snap = await getDocs(q);
-      setComments(snap.docs.map(d => ({ ...(d.data() as Omit<Comment, "id">), id: d.id })));
+      setComments(
+        snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            text: data.text as string,
+            createdAt: data.createdAt ? data.createdAt as Timestamp : null
+          };
+        })
+      );
     };
     fetch();
   }, [videoId]);
 
   // コメント投稿
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!text.trim()) return;
     setLoading(true);
@@ -46,7 +70,16 @@ export default function VideoComments({ videoId }: { videoId: string }) {
       orderBy("createdAt", "asc")
     );
     const snap = await getDocs(q);
-    setComments(snap.docs.map(d => ({ ...(d.data() as Omit<Comment, "id">), id: d.id })));
+    setComments(
+      snap.docs.map((d: QueryDocumentSnapshot<DocumentData>) => {
+        const data = d.data();
+        return {
+          id: d.id,
+          text: data.text as string,
+          createdAt: data.createdAt ? data.createdAt as Timestamp : null
+        };
+      })
+    );
     setLoading(false);
   };
 

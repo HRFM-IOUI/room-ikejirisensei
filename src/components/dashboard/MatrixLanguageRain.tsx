@@ -4,7 +4,7 @@ type MatrixLanguageRainProps = {
   color: string; // タブ・ユーザー選択カラーを反映
 };
 
-const LANG_GREETINGS = [
+const LANG_GREETINGS: string[] = [
   "Hello", "こんにちは", "H", "你好", "안녕하세요", "i", "Привет", "Hola", "مرحبا", "Bonjour",
   "Ciao", "R", "Merhaba", "Guten Tag", "שלום", "नमस्ते", "Hej", "Olá", "Selam", "Sawubona",
   "γειά", "O", "ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ", "Xin chào", "Szia", "Hallo", "Kamusta", "سلام", "สวัสดี",
@@ -12,7 +12,12 @@ const LANG_GREETINGS = [
 ];
 
 // レインボーグラデの生成
-const getRainbowGradient = (ctx: CanvasRenderingContext2D, x: number, y: number, len: number) => {
+const getRainbowGradient = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  len: number
+) => {
   const grad = ctx.createLinearGradient(x, y, x, y + len);
   grad.addColorStop(0, "#e66465");
   grad.addColorStop(0.25, "#fcaf3e");
@@ -30,7 +35,7 @@ export default function MatrixLanguageRain({ color }: MatrixLanguageRainProps) {
     if (!canvas) return;
 
     let running = true;
-    let ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let width = window.innerWidth;
@@ -41,7 +46,7 @@ export default function MatrixLanguageRain({ color }: MatrixLanguageRainProps) {
     // レインカラム
     const fontSize = 26;
     const columns = Math.floor(width / fontSize);
-    const drops = Array.from({ length: columns }, () =>
+    const drops: number[] = Array.from({ length: columns }, () =>
       Math.random() * (height / fontSize)
     );
 
@@ -64,11 +69,9 @@ export default function MatrixLanguageRain({ color }: MatrixLanguageRainProps) {
         const y = drops[i] * fontSize;
 
         // カラー
-        if (useRainbow && ctx) {
-          ctx.fillStyle = getRainbowGradient(ctx, x, y, fontSize * 1.5);
-        } else {
-          ctx.fillStyle = color;
-        }
+        ctx.fillStyle = useRainbow
+          ? getRainbowGradient(ctx, x, y, fontSize * 1.5)
+          : color;
 
         ctx.fillText(greet, x, y);
 
@@ -84,7 +87,7 @@ export default function MatrixLanguageRain({ color }: MatrixLanguageRainProps) {
     let animationId: number;
     function animate() {
       draw();
-      animationId = requestAnimationFrame(animate);
+      animationId = window.requestAnimationFrame(animate);
     }
     animate();
 
@@ -99,7 +102,7 @@ export default function MatrixLanguageRain({ color }: MatrixLanguageRainProps) {
 
     return () => {
       running = false;
-      cancelAnimationFrame(animationId);
+      window.cancelAnimationFrame(animationId);
       window.removeEventListener("resize", onResize);
     };
   }, [color]);

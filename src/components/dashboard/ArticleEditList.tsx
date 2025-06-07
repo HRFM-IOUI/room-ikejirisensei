@@ -1,14 +1,14 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { db } from "@/firebase";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import ArticleEditor from "./ArticleEditor";
 import { Block } from "./dashboardConstants";
 
 type Post = {
   id: string;
   blocks: Block[];
-  createdAt?: any;
+  createdAt?: Date | null;
   status?: string;
 };
 
@@ -20,7 +20,17 @@ export default function ArticleEditList() {
   useEffect(() => {
     const fetchPosts = async () => {
       const snap = await getDocs(collection(db, "posts"));
-      setPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
+      setPosts(
+        snap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            blocks: (data.blocks || []) as Block[],
+            createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : null,
+            status: data.status || undefined,
+          };
+        })
+      );
     };
     fetchPosts();
   }, []);
@@ -34,9 +44,19 @@ export default function ArticleEditList() {
       setEditingPost(null);
       // 一覧リロード
       const snap = await getDocs(collection(db, "posts"));
-      setPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
+      setPosts(
+        snap.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            blocks: (data.blocks || []) as Block[],
+            createdAt: data.createdAt ? new Date(data.createdAt.seconds * 1000) : null,
+            status: data.status || undefined,
+          };
+        })
+      );
     } catch (e) {
-      alert("保存エラー: " + (e as Error).message);
+      alert("保存エラー: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 

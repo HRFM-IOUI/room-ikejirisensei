@@ -7,11 +7,11 @@ import FullscreenEditorModal from "./FullscreenEditorModal";
 type Props = {
   blocks?: Block[];
   selectedId?: string | null;
-  setSelectedId?: (id: string) => void;
+  setSelectedId?: (id: string | null) => void;
   handleEditBlock?: (id: string, value: string) => void;
   handleDelete?: (id: string) => void;
   isEditMode?: boolean;
-  onSave?: (blocks: Block[]) => void; // 編集保存用
+  onSave?: (blocks: Block[]) => void;
 };
 
 export default function ArticleEditor({
@@ -23,7 +23,6 @@ export default function ArticleEditor({
   isEditMode = false,
   onSave,
 }: Props) {
-  // 編集用state
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [selectedId, setSelectedId] = useState<string | null>(propSelectedId);
   const [fullscreenEdit, setFullscreenEdit] = useState(false);
@@ -35,7 +34,7 @@ export default function ArticleEditor({
 
   // ブロック追加
   const handleAddBlock = (type: string) => {
-    setBlocks(bs => [...bs, createBlock(type as any)]);
+    setBlocks(bs => [...bs, createBlock(type as Block["type"])]);
   };
 
   // ブロック編集
@@ -66,12 +65,6 @@ export default function ArticleEditor({
   // 編集保存
   const handleEditSave = () => {
     if (onSave) onSave(blocks);
-  };
-
-  // 外部state渡し
-  const externalSet = (func?: any, ...args: any[]) => {
-    if (func) return func(...args);
-    return undefined;
   };
 
   // 選択中ブロック

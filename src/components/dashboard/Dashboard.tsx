@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, MutableRefObject } from "react";
 import styles from "./Dashboard.module.css";
 import DashboardCarouselTabs from "./DashboardCarouselTabs";
 import DashboardColorPicker from "./DashboardColorPicker";
@@ -16,7 +16,7 @@ import DashboardFooter from "./DashboardFooter";
 import FullscreenEditorModal from "./FullscreenEditorModal";
 import PreviewModal from "./PreviewModal";
 import VideoEditor from "./VideoEditor";
-import MediaLibrary from "./MediaLibrary"; // ←追加
+import MediaLibrary from "./MediaLibrary";
 import { EffectFade } from "swiper/modules";
 import {
   createBlock,
@@ -29,14 +29,14 @@ import {
 } from "./dashboardConstants";
 
 import { db } from "@/firebase";
-import { collection, addDoc, getDocs, serverTimestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, getDocs, serverTimestamp, doc, updateDoc, QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 // 記事リスト用型
 type ArticleListItem = {
   id: string;
   title: string;
-  createdAt?: any;
+  createdAt?: { toDate?: () => Date };
   blocks: Block[];
 };
 
@@ -48,7 +48,7 @@ const TABS = [
   { key: "videosList", label: "動画一覧" },
   { key: "members", label: "会員管理" },
   { key: "community", label: "コミュニティ" },
-  { key: "media", label: "メディアライブラリ" },  // ←ここ
+  { key: "media", label: "メディアライブラリ" },
   { key: "analytics", label: "アナリティクス" },
 ];
 
@@ -79,7 +79,7 @@ export default function Dashboard() {
     if (activeTab === "edit") {
       setLoadingArticles(true);
       getDocs(collection(db, "posts")).then(snapshot => {
-        const list: ArticleListItem[] = snapshot.docs.map(doc => ({
+        const list: ArticleListItem[] = snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
           id: doc.id,
           title: (doc.data().blocks?.[0]?.content?.slice(0, 20) || "無題記事"),
           createdAt: doc.data().createdAt,
@@ -97,6 +97,7 @@ export default function Dashboard() {
         setLoadingArticles(false);
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // 記事リストの選択切替
@@ -152,7 +153,7 @@ export default function Dashboard() {
       swiperRef.current.slideTo(idx);
     }
   };
-  const handleSlideChange = (swiper: any) => {
+  const handleSlideChange = (swiper: { activeIndex: number }) => {
     const idx = swiper.activeIndex;
     setActiveTab(TABS[idx].key);
   };

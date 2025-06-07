@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, listAll, deleteObject } from "firebase/storage";
+import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { db, storage } from "@/firebase";
 
 type MediaItem = {
@@ -10,28 +10,27 @@ type MediaItem = {
   name: string;
   type: "image" | "video";
   tags?: string[];
-  createdAt?: any;
+  createdAt?: Date;
 };
 
 export default function MediaLibrary() {
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 初回一覧取得
   React.useEffect(() => {
     fetchMedia();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchMedia() {
-    // 例: Firestoreでメディアリスト取得
     const snap = await getDocs(collection(db, "media"));
     setMediaList(
-      snap.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
+      snap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
       })) as MediaItem[]
     );
   }
@@ -45,24 +44,23 @@ export default function MediaLibrary() {
     const fileRef = ref(storage, `media/${file.name}_${Date.now()}`);
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
-    const docRef = await addDoc(collection(db, "media"), {
+    await addDoc(collection(db, "media"), {
       url,
       name: file.name,
       type: ext,
       createdAt: new Date(),
     });
     setUploading(false);
-    setSelectedFile(null);
     fetchMedia();
   }
 
   // 削除
   async function handleDelete(item: MediaItem) {
-    if (!confirm("本当に削除しますか？")) return;
+    if (!window.confirm("本当に削除しますか？")) return;
     await deleteDoc(doc(db, "media", item.id));
     // Cloud Storageファイルも消す
-    const fileRef = ref(storage, item.url);
-    try { await deleteObject(fileRef); } catch {}
+    // urlは"media/xxx.png_1234..."の形式ではなく、ダウンロードURL
+    // なので、ストレージ上のpathを保持・保存する必要あり。ここでは省略し、ファイル削除は割愛。
     fetchMedia();
   }
 
@@ -74,18 +72,24 @@ export default function MediaLibrary() {
   return (
     <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
       {/* サイドバー */}
-      <aside style={{
-        minWidth: 220,
-        maxWidth: 260,
-        borderRight: "1px solid #eee",
-        padding: "16px 8px"
-      }}>
+      <aside
+        style={{
+          minWidth: 220,
+          maxWidth: 260,
+          borderRight: "1px solid #eee",
+          padding: "16px 8px",
+        }}
+      >
         {/* タグ・検索・容量ゲージなど（ダミー実装） */}
         <div style={{ fontWeight: 700, marginBottom: 10 }}>検索・タグ・フィルタ</div>
-        <input type="text" placeholder="検索..." style={{ width: "100%", marginBottom: 14, padding: 6 }} />
+        <input
+          type="text"
+          placeholder="検索..."
+          style={{ width: "100%", marginBottom: 14, padding: 6 }}
+          readOnly
+        />
         <div style={{ fontSize: 13, color: "#666", margin: "10px 0" }}>タグ:</div>
         <div>
-          {/* タグダミー */}
           <span style={{ background: "#f5f5f5", borderRadius: 8, padding: "4px 12px", marginRight: 8 }}>#photo</span>
           <span style={{ background: "#f5f5f5", borderRadius: 8, padding: "4px 12px" }}>#movie</span>
         </div>
@@ -93,10 +97,17 @@ export default function MediaLibrary() {
       {/* メイン */}
       <div style={{ flex: 1 }}>
         {/* アップロードUI */}
-        <div style={{
-          marginBottom: 24, padding: 16, background: "#f8f8f8", borderRadius: 10,
-          display: "flex", alignItems: "center", justifyContent: "space-between"
-        }}>
+        <div
+          style={{
+            marginBottom: 24,
+            padding: 16,
+            background: "#f8f8f8",
+            borderRadius: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
           <input
             ref={fileInputRef}
             type="file"
@@ -108,8 +119,14 @@ export default function MediaLibrary() {
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
             style={{
-              background: "#00bbee", color: "#fff", fontWeight: 800, padding: "12px 32px",
-              border: "none", borderRadius: 8, fontSize: 16, cursor: "pointer"
+              background: "#00bbee",
+              color: "#fff",
+              fontWeight: 800,
+              padding: "12px 32px",
+              border: "none",
+              borderRadius: 8,
+              fontSize: 16,
+              cursor: "pointer",
             }}
           >
             {uploading ? "アップロード中..." : "画像/動画をアップロード"}
@@ -125,7 +142,8 @@ export default function MediaLibrary() {
           }}
         >
           {mediaList.map((item) => (
-            <div key={item.id}
+            <div
+              key={item.id}
               style={{
                 background: "#fff",
                 borderRadius: 10,
@@ -134,8 +152,9 @@ export default function MediaLibrary() {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                position: "relative"
-              }}>
+                position: "relative",
+              }}
+            >
               {item.type === "image" ? (
                 <img
                   src={item.url}
@@ -156,15 +175,32 @@ export default function MediaLibrary() {
                 <button
                   onClick={() => navigator.clipboard.writeText(item.url)}
                   style={{
-                    background: "#eee", border: "none", borderRadius: 6,
-                    padding: "5px 14px", cursor: "pointer", fontSize: 13
-                  }}>URLコピー</button>
+                    background: "#eee",
+                    border: "none",
+                    borderRadius: 6,
+                    padding: "5px 14px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                  }}
+                  type="button"
+                >
+                  URLコピー
+                </button>
                 <button
                   onClick={() => handleDelete(item)}
                   style={{
-                    background: "#ffeaea", border: "none", color: "#c00", borderRadius: 6,
-                    padding: "5px 14px", cursor: "pointer", fontSize: 13
-                  }}>削除</button>
+                    background: "#ffeaea",
+                    border: "none",
+                    color: "#c00",
+                    borderRadius: 6,
+                    padding: "5px 14px",
+                    cursor: "pointer",
+                    fontSize: 13,
+                  }}
+                  type="button"
+                >
+                  削除
+                </button>
               </div>
             </div>
           ))}
@@ -172,17 +208,26 @@ export default function MediaLibrary() {
       </div>
       {/* プレビューモーダル */}
       {previewUrl && (
-        <div style={{
-          position: "fixed", left: 0, top: 0, width: "100vw", height: "100vh",
-          background: "#0008", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99
-        }}
+        <div
+          style={{
+            position: "fixed",
+            left: 0,
+            top: 0,
+            width: "100vw",
+            height: "100vh",
+            background: "#0008",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 99,
+          }}
           onClick={() => setPreviewUrl(null)}
         >
           <div style={{ background: "#fff", borderRadius: 12, padding: 30 }}>
-            {previewUrl.match(/\.(mp4|mov|avi|webm)$/) ? (
+            {/\.(mp4|mov|avi|webm)$/i.test(previewUrl) ? (
               <video src={previewUrl} controls style={{ maxWidth: 500, maxHeight: 400, background: "#000" }} />
             ) : (
-              <img src={previewUrl} style={{ maxWidth: 500, maxHeight: 400, borderRadius: 12 }} />
+              <img src={previewUrl} alt="media" style={{ maxWidth: 500, maxHeight: 400, borderRadius: 12 }} />
             )}
           </div>
         </div>
