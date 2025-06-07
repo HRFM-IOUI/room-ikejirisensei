@@ -7,11 +7,11 @@ import FullscreenEditorModal from "./FullscreenEditorModal";
 type Props = {
   blocks?: Block[];
   selectedId?: string | null;
-  setSelectedId?: (id: string | null) => void;
+  setSelectedId?: (id: string) => void;
   handleEditBlock?: (id: string, value: string) => void;
   handleDelete?: (id: string) => void;
   isEditMode?: boolean;
-  onSave?: (blocks: Block[]) => void;
+  onSave?: (blocks: Block[]) => void; // 編集保存用
 };
 
 export default function ArticleEditor({
@@ -30,21 +30,12 @@ export default function ArticleEditor({
   // 外部stateと同期
   useEffect(() => {
     setBlocks(initialBlocks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(initialBlocks)]);
-
-  // ブロック追加
-  const handleAddBlock = (type: string) => {
-    setBlocks(bs => [...bs, createBlock(type as Block["type"])]);
-  };
 
   // ブロック編集
   const handleEditBlock = (id: string, value: string) => {
     setBlocks(bs => bs.map(b => b.id === id ? { ...b, content: value } : b));
-  };
-
-  // ブロックスタイル
-  const handleBlockStyle = (id: string, style: Partial<Block['style']>) => {
-    setBlocks(bs => bs.map(b => b.id === id ? { ...b, style: { ...b.style, ...style } } : b));
   };
 
   // 削除
@@ -134,6 +125,7 @@ export default function ArticleEditor({
                 marginTop: 18,
                 boxShadow: "0 2px 8px #5b8dee26",
               }}
+              type="button"
             >
               編集を保存する
             </button>
