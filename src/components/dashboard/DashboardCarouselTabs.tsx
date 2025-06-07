@@ -22,7 +22,7 @@ export default function DashboardCarouselTabs({
   // テーマが白か判定
   const isWhiteTheme = color === "#fff" || color.toLowerCase() === "white";
 
-  // タブ中央寄せ
+  // 中央寄せ
   useEffect(() => {
     if (containerRef.current && activeIndex >= 0) {
       const tabEl = containerRef.current.querySelectorAll<HTMLDivElement>(".carousel-tab-card")[activeIndex];
@@ -37,7 +37,7 @@ export default function DashboardCarouselTabs({
     }
   }, [activeIndex, tabs.length]);
 
-  // モバイル判定
+  // モバイル
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth <= 600);
@@ -49,7 +49,7 @@ export default function DashboardCarouselTabs({
   // ドロップダウン
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // グリッチ／カルーセルデザイン維持
+  // グリッチ／カルーセルデザインは絶対維持
   const getTabStyle = (isActive: boolean): React.CSSProperties =>
     isWhiteTheme
       ? {
@@ -90,13 +90,13 @@ export default function DashboardCarouselTabs({
           borderRadius: 13,
           cursor: "pointer",
           letterSpacing: 1.15,
-          textAlign: "center",
+          textAlign: "center" as const,
           userSelect: "none",
           transition: "all .22s cubic-bezier(0.44,1.54,.85,1)",
           zIndex: isActive ? 3 : 1,
           outline: isActive ? `2px solid ${color}` : "none",
           border: "none",
-          position: "relative",
+          position: "relative" as const,
         };
 
   // --- レンダリング ---
@@ -153,7 +153,7 @@ export default function DashboardCarouselTabs({
             }}
             role="listbox"
           >
-            {tabs.map((tab, idx) => (
+            {tabs.map((tab) => (
               <li
                 key={tab.key}
                 role="option"
@@ -183,7 +183,7 @@ export default function DashboardCarouselTabs({
     );
   }
 
-  // デスクトップ・カルーセルタブ
+  // デスクトップ・カルーセルタブ（演出維持、白テーマ時だけ配色反映）
   return (
     <nav
       className="carousel-tabs-bg"
@@ -211,16 +211,17 @@ export default function DashboardCarouselTabs({
           background: isWhiteTheme ? "#fff" : undefined,
         }}
       >
-        {tabs.map((tab, idx) => (
+        {tabs.map((tab, i) => (
           <div
             key={tab.key}
-            className={`carousel-tab-card${idx === activeIndex ? " active" : ""}`}
-            style={getTabStyle(idx === activeIndex)}
+            className={`carousel-tab-card${i === activeIndex ? " active" : ""}`}
+            style={getTabStyle(i === activeIndex)}
             onClick={() => onTabChange(tab.key)}
             tabIndex={0}
             aria-current={activeTab === tab.key ? "page" : undefined}
           >
             {tab.label}
+            {/* 残像・グリッチ・光演出はclassとcss側で維持 */}
             {!isWhiteTheme && (
               <div className="carouselPanelGlitch" />
             )}

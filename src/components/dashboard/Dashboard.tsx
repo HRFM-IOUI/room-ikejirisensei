@@ -5,6 +5,7 @@ import DashboardCarouselTabs from "./DashboardCarouselTabs";
 import DashboardColorPicker from "./DashboardColorPicker";
 import MatrixLanguageRain from "./MatrixLanguageRain";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperInstance } from "swiper";
 import "swiper/css";
 import "swiper/css/effect-fade";
 import "swiper/css/navigation";
@@ -16,7 +17,7 @@ import DashboardFooter from "./DashboardFooter";
 import FullscreenEditorModal from "./FullscreenEditorModal";
 import PreviewModal from "./PreviewModal";
 import VideoEditor from "./VideoEditor";
-import MediaLibrary from "./MediaLibrary";
+import MediaLibrary from "./MediaLibrary"; // ←追加
 import { EffectFade } from "swiper/modules";
 import {
   createBlock,
@@ -27,6 +28,7 @@ import {
   COLOR_PRESETS,
   BG_COLOR_PRESETS,
 } from "./dashboardConstants";
+
 import { db } from "@/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, doc, updateDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -47,7 +49,7 @@ const TABS = [
   { key: "videosList", label: "動画一覧" },
   { key: "members", label: "会員管理" },
   { key: "community", label: "コミュニティ" },
-  { key: "media", label: "メディアライブラリ" },
+  { key: "media", label: "メディアライブラリ" },  // ←ここ
   { key: "analytics", label: "アナリティクス" },
 ];
 
@@ -58,7 +60,7 @@ const TAB_COLORS = [
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<string>(TABS[0].key);
   const [selectedColor, setSelectedColor] = useState<string>(TAB_COLORS[0]);
-  const swiperRef = useRef<{ slideTo: (index: number) => void } | null>(null);
+  const swiperRef = useRef<SwiperInstance | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [fullscreenEdit, setFullscreenEdit] = useState(false);
@@ -151,7 +153,7 @@ export default function Dashboard() {
       swiperRef.current.slideTo(idx);
     }
   };
-  const handleSlideChange = (swiper: { activeIndex: number }) => {
+  const handleSlideChange = (swiper: SwiperInstance) => {
     const idx = swiper.activeIndex;
     setActiveTab(TABS[idx].key);
   };
@@ -238,7 +240,6 @@ export default function Dashboard() {
               transition: "background .16s",
               minWidth: 90
             }}
-            type="button"
           >トップに戻る</button>
         </div>
       </div>

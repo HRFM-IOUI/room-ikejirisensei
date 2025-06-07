@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // deleteObject削除
 import { db, storage } from "@/firebase";
+import Image from "next/image"; // 追加
 
 type MediaItem = {
   id: string;
@@ -17,12 +18,12 @@ export default function MediaLibrary() {
   const [mediaList, setMediaList] = useState<MediaItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewType, setPreviewType] = useState<"image" | "video" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 初回一覧取得
   React.useEffect(() => {
     fetchMedia();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchMedia() {
@@ -58,15 +59,14 @@ export default function MediaLibrary() {
   async function handleDelete(item: MediaItem) {
     if (!window.confirm("本当に削除しますか？")) return;
     await deleteDoc(doc(db, "media", item.id));
-    // Cloud Storageファイルも消す
-    // urlは"media/xxx.png_1234..."の形式ではなく、ダウンロードURL
-    // なので、ストレージ上のpathを保持・保存する必要あり。ここでは省略し、ファイル削除は割愛。
+    // Cloud Storageファイルも消す場合は、ファイルパスの管理が必要です
     fetchMedia();
   }
 
   // プレビュー
-  function openPreview(url: string) {
+  function openPreview(url: string, type: "image" | "video") {
     setPreviewUrl(url);
+    setPreviewType(type);
   }
 
   return (
@@ -80,7 +80,6 @@ export default function MediaLibrary() {
           padding: "16px 8px",
         }}
       >
-        {/* タグ・検索・容量ゲージなど（ダミー実装） */}
         <div style={{ fontWeight: 700, marginBottom: 10 }}>検索・タグ・フィルタ</div>
         <input
           type="text"
@@ -156,18 +155,20 @@ export default function MediaLibrary() {
               }}
             >
               {item.type === "image" ? (
-                <img
+                <Image
                   src={item.url}
                   alt={item.name}
-                  style={{ maxWidth: "100%", borderRadius: 8, cursor: "pointer", marginBottom: 10 }}
-                  onClick={() => openPreview(item.url)}
+                  width={320}
+                  height={180}
+                  style={{ maxWidth: "100%", borderRadius: 8, cursor: "pointer", marginBottom: 10, objectFit: "cover" }}
+                  onClick={() => openPreview(item.url, "image")}
                 />
               ) : (
                 <video
                   src={item.url}
                   controls
                   style={{ width: "100%", borderRadius: 8, cursor: "pointer", marginBottom: 10, background: "#000" }}
-                  onClick={() => openPreview(item.url)}
+                  onClick={() => openPreview(item.url, "video")}
                 />
               )}
               <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>{item.name}</div>
@@ -221,13 +222,22 @@ export default function MediaLibrary() {
             justifyContent: "center",
             zIndex: 99,
           }}
-          onClick={() => setPreviewUrl(null)}
+          onClick={() => {
+            setPreviewUrl(null);
+            setPreviewType(null);
+          }}
         >
           <div style={{ background: "#fff", borderRadius: 12, padding: 30 }}>
-            {/\.(mp4|mov|avi|webm)$/i.test(previewUrl) ? (
+            {previewType === "video" ? (
               <video src={previewUrl} controls style={{ maxWidth: 500, maxHeight: 400, background: "#000" }} />
             ) : (
-              <img src={previewUrl} alt="media" style={{ maxWidth: 500, maxHeight: 400, borderRadius: 12 }} />
+              <Image
+                src={previewUrl}
+                alt="media"
+                width={500}
+                height={400}
+                style={{ maxWidth: 500, maxHeight: 400, borderRadius: 12, objectFit: "contain" }}
+              />
             )}
           </div>
         </div>

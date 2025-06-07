@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Block, createBlock } from "./dashboardConstants";
+import { Block } from "./dashboardConstants"; // ← createBlockを削除
 import SortableBlock from "./SortableBlock";
 import FullscreenEditorModal from "./FullscreenEditorModal";
 

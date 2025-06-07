@@ -1,6 +1,7 @@
 // src/components/dashboard/PreviewModal.tsx
 import React from "react";
 import { Block } from "./dashboardConstants";
+import Image from "next/image"; // 追加
 
 type Props = {
   open: boolean;
@@ -104,10 +105,12 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
               }
               if (block.type === "image") {
                 return block.content ? (
-                  <img
+                  <Image
                     key={block.id}
                     src={block.content}
                     alt="アップロード画像"
+                    width={510}
+                    height={340}
                     style={{
                       width: "97%",
                       maxWidth: 510,
@@ -115,7 +118,9 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
                       margin: "22px 0 18px 0",
                       boxShadow: "0 4px 26px #19234915",
                       display: "block",
+                      objectFit: "contain"
                     }}
+                    unoptimized // 外部URLやS3のダイレクトURL等で最適化不可の場合必須
                   />
                 ) : null;
               }
