@@ -2,9 +2,14 @@
 import React, { useEffect, useState } from "react";
 import { collection, query, orderBy, limit, getDocs, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
-import type { Post } from "../types/post";
 import Image from "next/image";
 import Link from "next/link";
+
+// ブロック型定義
+type Block = {
+  type: "heading" | "text" | "image" | "video";
+  content: string;
+};
 
 // サムネイル未設定時のデフォルト画像
 const DEFAULT_IMAGE = "/logo.svg";
@@ -29,12 +34,12 @@ function formatDate(dateVal: string | number | { seconds?: number }) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
-// 型定義：Post（blocks配列のみany対応。型厳密化したい場合はご相談を！）
+// 型定義：Post
 type SimplePost = {
   id: string;
   title: string;
-  createdAt: any;
-  blocks?: any[];
+  createdAt: string | number | { seconds?: number };
+  blocks?: Block[];
   image?: string;
 };
 
@@ -50,11 +55,21 @@ export default function HeroSection() {
       );
       const snapshot = await getDocs(postsQuery);
       const fetchedPosts: SimplePost[] = snapshot.docs.map(
-        doc =>
-          ({
+        doc => {
+          const data = doc.data() as DocumentData;
+          return {
             id: doc.id,
-            ...(doc.data() as DocumentData),
-          } as SimplePost)
+            title: data.title ?? "",
+            createdAt: data.createdAt ?? "",
+            blocks: Array.isArray(data.blocks)
+              ? data.blocks.map((b: any) => ({
+                  type: b.type,
+                  content: b.content,
+                }))
+              : [],
+            image: data.image ?? undefined,
+          };
+        }
       );
       setPosts(fetchedPosts);
     })();
@@ -83,8 +98,8 @@ export default function HeroSection() {
         <ul className="flex flex-col gap-4 sm:gap-6">
           {posts.map((p, idx) => {
             // blocks配列から最初のimageブロックを取得
-            const firstImage = p.blocks?.find?.(
-              (b: any) => b.type === "image" && b.content
+            const firstImage = p.blocks?.find(
+              (b) => b.type === "image" && b.content
             );
 
             return (
@@ -102,16 +117,12 @@ export default function HeroSection() {
               >
                 <Link href={`/posts/${p.id}`} className="flex items-center gap-3 sm:gap-4 w-full group">
                   <Image
-                    src={
-                      firstImage?.content ||
-                      p.image ||
-                      DEFAULT_IMAGE
-                    }
-                    alt={p.title}
+                    src={firstImage?.content || p.image || DEFAULT_IMAGE}
+                    alt={p.title || "thumbnail"}
                     className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-xl border border-[#192349]/10 group-hover:opacity-90 transition"
                     width={80}
                     height={80}
-                    unoptimized
+                    priority
                   />
                   <div className="flex-1 min-w-0">
                     <div className="block text-base sm:text-lg font-bold text-[#192349] truncate group-hover:underline">

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
-import type { Post } from "@/types/post";
 import Image from "next/image";
 
 // ブロック型定義
@@ -41,14 +40,14 @@ function formatDate(val: string | number | { seconds?: number }) {
 }
 
 export default function PostDetailPage() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [post, setPost] = useState<PostData | null>(null);
 
   useEffect(() => {
     if (!id) return;
     const fetchPost = async () => {
-      const docRef = doc(db, "posts", id as string);
+      const docRef = doc(db, "posts", id);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
         // blocksが不明な場合は空配列
@@ -70,9 +69,9 @@ export default function PostDetailPage() {
     );
 
   // 画像サムネイル（最初のimageブロックを優先）
-  const firstImage = post.blocks?.find?.(
+  const firstImage = post.blocks?.find(
     (b) => b.type === "image" && !!b.content
-  ) as Block | undefined;
+  );
 
   return (
     <div
@@ -103,7 +102,7 @@ export default function PostDetailPage() {
         {firstImage && (
           <Image
             src={firstImage.content}
-            alt={post.title}
+            alt={post.title || "thumbnail"}
             width={650}
             height={310}
             style={{
@@ -144,7 +143,7 @@ export default function PostDetailPage() {
           }}
         >
           {/* blocks配列をレンダリング */}
-          {post.blocks?.map?.((block, idx) => {
+          {post.blocks?.map((block, idx) => {
             if (block.type === "heading")
               return <h2 key={idx}>{block.content}</h2>;
             if (block.type === "text")
@@ -154,7 +153,7 @@ export default function PostDetailPage() {
                 <Image
                   key={idx}
                   src={block.content}
-                  alt=""
+                  alt={`image_${idx}`}
                   width={650}
                   height={310}
                   style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }}

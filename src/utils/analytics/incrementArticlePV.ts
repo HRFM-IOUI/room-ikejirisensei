@@ -1,4 +1,3 @@
-// src/utils/analytics/incrementArticlePV.ts
 import { db } from "@/firebase";
 import { doc, updateDoc, increment } from "firebase/firestore";
 
@@ -9,14 +8,14 @@ import { doc, updateDoc, increment } from "firebase/firestore";
  *
  * @param articleId 記事ID
  */
-export async function incrementArticlePV(articleId: string) {
+export async function incrementArticlePV(articleId: string): Promise<void> {
   if (!articleId) return;
   try {
     const articleRef = doc(db, "posts", articleId);
     await updateDoc(articleRef, {
       pv: increment(1),
     });
-  } catch (err) {
+  } catch {
     // 権限がない場合も含めてエラー握りつぶし（UIに影響なし）
     // console.error("PVカウントエラー", err);
   }

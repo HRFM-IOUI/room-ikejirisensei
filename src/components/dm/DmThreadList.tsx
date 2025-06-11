@@ -1,4 +1,3 @@
-// src/components/dm/DmThreadList.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { db } from "../../firebase";
@@ -15,12 +14,13 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";
+import Image from "next/image";
 
 type DmThread = {
   id: string;
   participants: string[];
   lastMessage?: string;
-  lastTimestamp?: any;
+  lastTimestamp?: Date | { toDate(): Date } | string | number;
 };
 
 type User = {
@@ -76,10 +76,10 @@ export default function DmThreadList({
     );
     if (!uids.length) return;
     Promise.all(
-      uids.map(uid => getDocs(query(collection(db, "users"), where("uid", "==", uid)))
-    )).then((snapshots) => {
+      uids.map(uid => getDocs(query(collection(db, "users"), where("uid", "==", uid))))
+    ).then((snapshots) => {
       const result: { [uid: string]: User } = {};
-      snapshots.forEach((snap, idx) => {
+      snapshots.forEach((snap) => {
         snap.forEach(docSnap => {
           const data = docSnap.data();
           result[data.uid] = { uid: data.uid, name: data.name || data.uid, photoURL: data.photoURL };
@@ -180,7 +180,7 @@ export default function DmThreadList({
     setCreating(false);
   }
 
-  // 未読合計（メニュー用にも流用可）
+  // 未読合計
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
   // スレッドフィルタリング（ブロック済みは非表示）
@@ -288,7 +288,11 @@ export default function DmThreadList({
             >
               {/* サムネイル */}
               {user.photoURL ? (
-                <img src={user.photoURL} alt="icon" width={26} height={26}
+                <Image
+                  src={user.photoURL}
+                  alt="icon"
+                  width={26}
+                  height={26}
                   style={{
                     borderRadius: "50%",
                     border: "1px solid #e1e6ee",
@@ -380,7 +384,11 @@ export default function DmThreadList({
             >
               {/* プロフィール画像 */}
               {otherUser?.photoURL ? (
-                <img src={otherUser.photoURL} alt="icon" width={36} height={36}
+                <Image
+                  src={otherUser.photoURL}
+                  alt="icon"
+                  width={36}
+                  height={36}
                   style={{
                     borderRadius: "50%",
                     border: "1.5px solid #e1e6ee",

@@ -32,10 +32,10 @@ export async function getArticleViewRanking(limit: number = 10) {
   const snap = await getDocs(
     query(collection(db, "articleViews"), orderBy("count", "desc"))
   );
-  return snap.docs.slice(0, limit).map(doc => ({
-    id: doc.id,
-    count: doc.data().count ?? 0,
-    updatedAt: doc.data().updatedAt?.toDate() ?? null,
+  return snap.docs.slice(0, limit).map((d) => ({
+    id: d.id,
+    count: d.data().count ?? 0,
+    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
   }));
 }
 
@@ -46,10 +46,10 @@ export async function getArticleViewRankingWithDetails(limit: number = 10) {
   const pvSnap = await getDocs(
     query(collection(db, "articleViews"), orderBy("count", "desc"))
   );
-  const top = pvSnap.docs.slice(0, limit).map(doc => ({
-    id: doc.id,
-    pv: doc.data().count ?? 0,
-    updatedAt: doc.data().updatedAt?.toDate() ?? null,
+  const top = pvSnap.docs.slice(0, limit).map((d) => ({
+    id: d.id,
+    pv: d.data().count ?? 0,
+    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
   }));
 
   // 並列で記事タイトル・タグ等も取得
@@ -59,9 +59,12 @@ export async function getArticleViewRankingWithDetails(limit: number = 10) {
       const postData = postSnap.exists() ? postSnap.data() : {};
       return {
         ...item,
-        title: postData?.blocks?.[0]?.content?.slice(0, 30) || postData?.title || "無題",
-        tags: postData?.tags || [],
-        createdAt: postData?.createdAt?.toDate?.() || null,
+        title:
+          (postData as Record<string, any>)?.blocks?.[0]?.content?.slice(0, 30) ||
+          (postData as Record<string, any>)?.title ||
+          "無題",
+        tags: (postData as Record<string, any>)?.tags || [],
+        createdAt: (postData as Record<string, any>)?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
@@ -96,10 +99,10 @@ export async function getVideoViewRanking(limit: number = 10) {
   const snap = await getDocs(
     query(collection(db, "videoViews"), orderBy("count", "desc"))
   );
-  return snap.docs.slice(0, limit).map(doc => ({
-    id: doc.id,
-    count: doc.data().count ?? 0,
-    updatedAt: doc.data().updatedAt?.toDate() ?? null,
+  return snap.docs.slice(0, limit).map((d) => ({
+    id: d.id,
+    count: d.data().count ?? 0,
+    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
   }));
 }
 
@@ -109,12 +112,12 @@ export async function getVideoViewRanking(limit: number = 10) {
 export async function getVideoRanking() {
   const q = query(collection(db, "videos"), orderBy("views", "desc"));
   const snap = await getDocs(q);
-  return snap.docs.map(doc => ({
-    id: doc.id,
-    title: doc.data().title || "無題動画",
-    views: doc.data().views || 0,
-    tags: doc.data().tags || [],
-    thumbnail: doc.data().thumbnail || null,
+  return snap.docs.map((d) => ({
+    id: d.id,
+    title: d.data().title || "無題動画",
+    views: d.data().views || 0,
+    tags: d.data().tags || [],
+    thumbnail: d.data().thumbnail || null,
   }));
 }
 
@@ -125,10 +128,10 @@ export async function getVideoViewRankingWithDetails(limit: number = 10) {
   const pvSnap = await getDocs(
     query(collection(db, "videoViews"), orderBy("count", "desc"))
   );
-  const top = pvSnap.docs.slice(0, limit).map(doc => ({
-    id: doc.id,
-    pv: doc.data().count ?? 0,
-    updatedAt: doc.data().updatedAt?.toDate() ?? null,
+  const top = pvSnap.docs.slice(0, limit).map((d) => ({
+    id: d.id,
+    pv: d.data().count ?? 0,
+    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
   }));
 
   // 並列で動画タイトル・タグ・サムネ等も取得
@@ -138,10 +141,10 @@ export async function getVideoViewRankingWithDetails(limit: number = 10) {
       const videoData = videoSnap.exists() ? videoSnap.data() : {};
       return {
         ...item,
-        title: videoData?.title || "無題動画",
-        tags: videoData?.tags || [],
-        thumbnail: videoData?.thumbnail || null,
-        createdAt: videoData?.createdAt?.toDate?.() || null,
+        title: (videoData as Record<string, any>)?.title || "無題動画",
+        tags: (videoData as Record<string, any>)?.tags || [],
+        thumbnail: (videoData as Record<string, any>)?.thumbnail || null,
+        createdAt: (videoData as Record<string, any>)?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
@@ -172,16 +175,25 @@ export async function getUserCountsByDate() {
   const snap = await getDocs(collection(db, "users"));
   // 登録日のISO日付単位にグルーピング
   const dateMap: { [date: string]: number } = {};
-  snap.docs.forEach(doc => {
-    const d = doc.data().createdAt?.toDate?.() || doc.data().createdAt;
-    if (!d) return;
-    const date = (d instanceof Date ? d : new Date(d)).toISOString().slice(0, 10);
+  snap.docs.forEach((d) => {
+    const userData = d.data() as Record<string, any>;
+    const createdAt = userData.createdAt;
+    const dateObj =
+      typeof createdAt?.toDate === "function"
+        ? createdAt.toDate()
+        : createdAt
+        ? new Date(createdAt)
+        : null;
+    if (!dateObj) return;
+    const date = (dateObj instanceof Date ? dateObj : new Date(dateObj))
+      .toISOString()
+      .slice(0, 10);
     dateMap[date] = (dateMap[date] || 0) + 1;
   });
   // 日付ソート・累積
   const dates = Object.keys(dateMap).sort();
   let total = 0;
-  const userCounts = dates.map(date => (total += dateMap[date]));
+  const userCounts = dates.map((date) => (total += dateMap[date]));
   return { dates, userCounts };
 }
 
@@ -194,7 +206,7 @@ export async function markUserActive(userId: string) {
     await updateDoc(doc(db, "users", userId), {
       lastActive: serverTimestamp(),
     });
-  } catch (e) {
+  } catch {
     // エラーは握りつぶし
   }
 }
@@ -206,8 +218,9 @@ export async function getActiveUserCount(days: number): Promise<number> {
   const snap = await getDocs(collection(db, "users"));
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   let count = 0;
-  snap.forEach(doc => {
-    const lastActive = doc.data().lastActive;
+  snap.forEach((d) => {
+    const userData = d.data() as Record<string, any>;
+    const lastActive = userData.lastActive;
     let lastDate: Date | null = null;
     if (lastActive && typeof lastActive.toDate === "function") {
       lastDate = lastActive.toDate();
@@ -227,8 +240,9 @@ export async function getActiveUserCount(days: number): Promise<number> {
 export async function getDonationStats() {
   const snap = await getDocs(collection(db, "donations"));
   let total = 0;
-  snap.forEach(doc => {
-    total += Number(doc.data().amount ?? 0);
+  snap.forEach((d) => {
+    const data = d.data() as Record<string, any>;
+    total += Number(data.amount ?? 0);
   });
   return { total, count: snap.size };
 }
@@ -236,7 +250,7 @@ export async function getDonationStats() {
 /**
  * [13] Google Analytics (GA4) イベント送信（フロントから呼ぶ場合のみ有効）
  */
-export function sendGAEvent(eventName: string, params: any = {}) {
+export function sendGAEvent(eventName: string, params: Record<string, unknown> = {}) {
   if (typeof window !== "undefined" && (window as any).gtag) {
     (window as any).gtag("event", eventName, params);
   }
@@ -250,13 +264,13 @@ export async function getArticleDetail(postId: string) {
   const ref = doc(db, "posts", postId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  const data = snap.data();
+  const data = snap.data() as Record<string, any>;
   return {
     id: postId,
     title: data.blocks?.[0]?.content?.slice(0, 30) || data.title || "無題",
     tags: data.tags || [],
     createdAt: data.createdAt?.toDate?.() || null,
-    ...data
+    ...data,
   };
 }
 
@@ -273,7 +287,7 @@ export async function logReferral(referrer?: string) {
     key = "direct";
   } else if (referrer.includes("google.")) {
     key = "google";
-  } else if (referrer.match(/twitter\.com|x\.com/)) {
+  } else if (/twitter\.com|x\.com/.test(referrer)) {
     key = "twitter";
   } else if (referrer.includes("facebook.")) {
     key = "facebook";
@@ -291,9 +305,9 @@ export async function logReferral(referrer?: string) {
  */
 export async function getReferralStats() {
   const snap = await getDocs(collection(db, "referralStats"));
-  return snap.docs.map(doc => ({
-    key: doc.id,
-    label: doc.id,
-    count: doc.data().count ?? 0,
+  return snap.docs.map((d) => ({
+    key: d.id,
+    label: d.id,
+    count: d.data().count ?? 0,
   }));
 }

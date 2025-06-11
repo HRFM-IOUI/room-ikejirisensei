@@ -71,7 +71,7 @@ export default function MediaLibrary() {
     setMediaList(snap.docs.map((d) => ({ id: d.id, ...d.data() } as MediaItem)));
   }
 
-  // ここからサムネイル自動生成を含むアップロード処理
+  // サムネイル自動生成（動画のみ）
   function extractThumbnail(file: File, seekTo = 1.0): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const video = document.createElement("video");
@@ -85,7 +85,7 @@ export default function MediaLibrary() {
         canvas.height = video.videoHeight;
         canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
-          if (blob) resolve(blob as Blob);
+          if (blob) resolve(blob);
           else reject(new Error("サムネイル生成失敗"));
         }, "image/jpeg", 0.92);
       };

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import {
   collection,
   query,
@@ -13,10 +13,9 @@ import {
   deleteDoc
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../../firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-// Firestore Timestamp型の互換定義
+// Firestore Timestamp型
 type FirestoreTimestamp = {
   seconds: number;
   nanoseconds: number;
@@ -38,7 +37,11 @@ type Message = {
   readBy?: string[];
 };
 
-export default function ChatRoom({ roomId }: { roomId: string }) {
+interface ChatRoomProps {
+  roomId: string;
+}
+
+export default function ChatRoom({ roomId }: ChatRoomProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState<string | null>(null);
@@ -67,10 +70,23 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
       orderBy("createdAt", "asc")
     );
     const unsub = onSnapshot(q, (snapshot) => {
-      const ms = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as Message[];
+      const ms: Message[] = snapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          userId: data.userId ?? "",
+          userName: data.userName ?? "",
+          text: data.text ?? "",
+          imageUrl: data.imageUrl,
+          videoUrl: data.videoUrl,
+          type: data.type,
+          createdAt: data.createdAt ?? null,
+          editedAt: data.editedAt,
+          replyTo: data.replyTo,
+          mentions: data.mentions ?? [],
+          readBy: data.readBy ?? [],
+        };
+      });
       setMessages(ms);
 
       // 既読処理
@@ -98,11 +114,13 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
   }, [roomId, user?.uid]);
 
   // メディアアップロード
-  async function uploadMediaFile(file: File) {
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    const type = file.type.startsWith("image") ? "image" :
-      file.type.startsWith("video") ? "video" : "unknown";
-    if (!["jpg", "jpeg", "png", "gif", "mp4"].includes(ext || "") || file.size > 20 * 1024 * 1024) {
+  async function uploadMediaFile(file: File): Promise<{ url: string; type: "image" | "video" }> {
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+    let type: "image" | "video";
+    if (file.type.startsWith("image")) type = "image";
+    else if (file.type.startsWith("video")) type = "video";
+    else throw new Error("対応ファイル: jpg, png, gif, mp4（20MBまで）");
+    if (!["jpg", "jpeg", "png", "gif", "mp4"].includes(ext) || file.size > 20 * 1024 * 1024) {
       throw new Error("対応ファイル: jpg, png, gif, mp4（20MBまで）");
     }
     const storage = getStorage();
@@ -320,6 +338,7 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
               <>
                 {/* メディア */}
                 {msg.type === "image" && msg.imageUrl && (
+                  // Next.jsの最適化は用途・環境に応じて
                   <img src={msg.imageUrl} alt="画像" style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0" }} />
                 )}
                 {msg.type === "video" && msg.videoUrl && (

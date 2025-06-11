@@ -1,4 +1,3 @@
-// src/components/editor/GenkouViewer.tsx
 import React, { useEffect, useState } from "react";
 
 // 多言語・各国向け原稿用紙設定（省略なし！）
@@ -119,10 +118,10 @@ function splitTextToPagesWithIndentAndKinsoku(
   rows: number,
   lang: SupportedLang = "ja"
 ): { pages: string[][], textToGrid: number[], gridToText: number[] } {
-  let pages: string[][] = [];
-  let grid: string[] = [];
-  let textToGrid: number[] = [];
-  let gridToText: number[] = [];
+  const pages: string[][] = [];
+  const grid: string[] = [];
+  const textToGrid: number[] = [];
+  const gridToText: number[] = [];
   let gridIdx = 0;
   const paragraphs = text.split(/\r?\n/);
   let textIdx = 0;
@@ -183,7 +182,7 @@ const GenkouViewer: React.FC<Props> = ({
   rubiList = [],
 }) => {
   const cfg = LANG_CONFIG[lang] || LANG_CONFIG["ja"];
-  const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title, aspect } = cfg;
+  const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title } = cfg;
 
   // サイズ追従: 高さ-2cm, 横幅+12cm（cm→px換算: 1cm≒37.8px）
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
@@ -245,7 +244,7 @@ const GenkouViewer: React.FC<Props> = ({
     const startTextIdx = r.index;
     const endTextIdx = r.index + r.length;
     const gridStart = textToGrid[startTextIdx];
-    const gridEnd = textToGrid[endTextIdx - 1];
+    // gridEndは使用しないため削除
     const pageStart = page * cols * rows;
     const pageEnd = (page + 1) * cols * rows;
     if (
