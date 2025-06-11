@@ -1,3 +1,4 @@
+// src/components/editor/DefaultEditor.tsx
 import React from "react";
 
 type Props = {
@@ -6,12 +7,13 @@ type Props = {
   fontFamily?: string;
   fontSize?: string;
   color?: string;
-  onFocus?: () => void; // 追加
-  onBlur?: () => void;  // 追加
+  onFocus?: () => void;
+  onBlur?: () => void;
+  language?: "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
 };
 
 const DefaultEditor: React.FC<Props> = ({
-  value, onChange, fontFamily, fontSize, color, onFocus, onBlur
+  value, onChange, fontFamily, fontSize, color, onFocus, onBlur, language = "ja"
 }) => (
   <textarea
     value={value}
@@ -19,6 +21,8 @@ const DefaultEditor: React.FC<Props> = ({
     style={{
       width: "100%",
       height: "100%",
+      minHeight: 300,
+      maxHeight: 800,
       fontFamily: fontFamily || "Noto Sans JP, Arial, sans-serif",
       fontSize: fontSize || "1.2rem",
       color: color || "#192349",
@@ -36,6 +40,7 @@ const DefaultEditor: React.FC<Props> = ({
     spellCheck={false}
     onFocus={onFocus}
     onBlur={onBlur}
+    aria-label={`エディタ (${language})`}
   />
 );
 

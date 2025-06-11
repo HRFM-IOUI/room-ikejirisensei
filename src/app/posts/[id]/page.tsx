@@ -5,21 +5,20 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { Post } from "@/types/post";
-import Image from "next/image"; // ← 追加！
 
-// Firestore Timestampやstring/numberを安全に日付文字列へ変換
-function formatDate(dateVal: string | number | { seconds?: number }) {
-  if (!dateVal) return "";
+// createdAtフォーマット
+function formatDate(val: string | number | { seconds?: number }) {
+  if (!val) return "";
   let d: Date;
   if (
-    typeof dateVal === "object" &&
-    dateVal !== null &&
-    "seconds" in dateVal &&
-    typeof dateVal.seconds === "number"
+    typeof val === "object" &&
+    val !== null &&
+    "seconds" in val &&
+    typeof val.seconds === "number"
   ) {
-    d = new Date(dateVal.seconds * 1000);
+    d = new Date(val.seconds * 1000);
   } else {
-    d = new Date(dateVal as string | number);
+    d = new Date(val as string | number);
   }
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -30,7 +29,7 @@ function formatDate(dateVal: string | number | { seconds?: number }) {
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [post, setPost] = useState<Post | null>(null);
+  const [post, setPost] = useState<any | null>(null); // ← any型でblocks考慮
 
   useEffect(() => {
     if (!id) return;
@@ -38,7 +37,7 @@ export default function PostDetailPage() {
       const docRef = doc(db, "posts", id as string);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        setPost({ id: snap.id, ...snap.data() } as Post);
+        setPost({ id: snap.id, ...snap.data() });
       }
     };
     fetchPost();
@@ -48,6 +47,9 @@ export default function PostDetailPage() {
     return (
       <div style={{ textAlign: "center", marginTop: 60 }}>Loading...</div>
     );
+
+  // 画像サムネイル（最初のimageブロックを優先）
+  const firstImage = post.blocks?.find?.((b: any) => b.type === "image" && b.content);
 
   return (
     <div
@@ -75,9 +77,10 @@ export default function PostDetailPage() {
         ← 記事一覧へ戻る
       </button>
       <div>
-        {post.image && (
-          <Image
-            src={post.image}
+        {firstImage && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={firstImage.content}
             alt={post.title}
             width={650}
             height={310}
@@ -88,7 +91,6 @@ export default function PostDetailPage() {
               borderRadius: 12,
               marginBottom: 18,
             }}
-            unoptimized // 外部URLの場合は必須
           />
         )}
         <h1
@@ -108,7 +110,7 @@ export default function PostDetailPage() {
             marginBottom: 22,
           }}
         >
-          {formatDate(post.date)}
+          {formatDate(post.createdAt)}
         </div>
         <div
           style={{
@@ -118,7 +120,19 @@ export default function PostDetailPage() {
             lineHeight: 2,
           }}
         >
-          {post.content}
+          {/* blocks配列をレンダリング */}
+          {post.blocks?.map?.((block: any, idx: number) => {
+            if (block.type === "heading") return <h2 key={idx}>{block.content}</h2>;
+            if (block.type === "text") return <p key={idx}>{block.content}</p>;
+            if (block.type === "image") return (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={idx} src={block.content} alt="" style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }} />
+            );
+            if (block.type === "video") return (
+              <video key={idx} src={block.content} controls style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }} />
+            );
+            return null;
+          })}
         </div>
       </div>
     </div>

@@ -3,6 +3,9 @@ import { Block } from "./dashboardConstants";
 import styles from "./Dashboard.module.css";
 import { FaExpand } from "react-icons/fa";
 
+// SupportedLang型（記事エディタと揃える）
+type SupportedLang = "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
+
 type Option = { label: string; value: string };
 type ColorPreset = { value: string };
 
@@ -13,7 +16,10 @@ type Props = {
   FONT_SIZE_OPTIONS: Option[];
   COLOR_PRESETS: ColorPreset[];
   BG_COLOR_PRESETS: ColorPreset[];
-  onFullscreenEdit?: () => void;
+  onFullscreenEdit?: (blockId: string, language: SupportedLang) => void; // ←ここ型厳密化
+  show?: boolean;
+  mobile?: boolean;
+  fullscreenLanguage?: SupportedLang; // 言語も受け取れるように拡張
 };
 
 const LABEL_COLOR = "#192349";
@@ -27,6 +33,9 @@ export default function DashboardRightPanel({
   COLOR_PRESETS,
   BG_COLOR_PRESETS,
   onFullscreenEdit,
+  show = true,
+  mobile = false,
+  fullscreenLanguage = "ja", // デフォルト言語
 }: Props) {
   // 下線/打消し線複合管理
   const updateTextDecoration = (
@@ -44,6 +53,8 @@ export default function DashboardRightPanel({
     handleBlockStyle(id, { textDecoration: arr.join(" ") });
   };
 
+  if (!show) return null;
+
   return (
     <aside
       className={styles.dashboardRight}
@@ -52,9 +63,9 @@ export default function DashboardRightPanel({
         border: "1.5px solid #e2e8f6",
         borderRadius: 17,
         boxShadow: "0 10px 32px 0 rgba(30,40,80,0.09)",
-        padding: "38px 32px 30px 32px",
-        minWidth: 290,
-        maxWidth: 340,
+        padding: mobile ? "26px 13px 18px 13px" : "38px 32px 30px 32px",
+        minWidth: mobile ? 220 : 290,
+        maxWidth: mobile ? 310 : 340,
         margin: 0,
         display: "flex",
         flexDirection: "column",
@@ -83,10 +94,12 @@ export default function DashboardRightPanel({
           }}>
             タイプ: <span style={{ color: "#0e53be", fontWeight: 700 }}>{selectedBlock.type}</span>
           </div>
-          {/* フルスクリーン編集ボタンはテキスト・見出しのみ */}
+          {/* フルスクリーン編集ボタン */}
           {(selectedBlock.type === "heading" || selectedBlock.type === "text") && onFullscreenEdit && (
             <button
-              onClick={onFullscreenEdit}
+              onClick={() =>
+                onFullscreenEdit(selectedBlock.id, fullscreenLanguage)
+              }
               style={{
                 margin: "6px 0 16px 0",
                 padding: "8px 24px 8px 15px",
@@ -206,7 +219,7 @@ export default function DashboardRightPanel({
                 </label>
                 <input
                   type="color"
-                  value={selectedBlock.style?.color || "#222"}
+                  value={selectedBlock.style?.color || "#222222"}
                   onChange={e =>
                     handleBlockStyle(selectedBlock.id, { color: e.target.value })
                   }
@@ -245,7 +258,7 @@ export default function DashboardRightPanel({
                 </label>
                 <input
                   type="color"
-                  value={selectedBlock.style?.backgroundColor || "#fff"}
+                  value={selectedBlock.style?.backgroundColor || "#ffffff"}
                   onChange={e =>
                     handleBlockStyle(selectedBlock.id, { backgroundColor: e.target.value })
                   }
@@ -261,7 +274,7 @@ export default function DashboardRightPanel({
                   <button
                     key={opt.value}
                     style={{
-                      background: opt.value || "#fff",
+                      background: opt.value || "#ffffff",
                       width: 18,
                       height: 18,
                       border: "1px solid #ccd2e7",
@@ -308,7 +321,7 @@ export default function DashboardRightPanel({
                 fontSize: 13,
                 borderTop: "1px solid #ececec",
                 paddingTop: 12,
-              }}>※今後: 装飾項目は無限拡張可能</div>
+              }}>※今後: 装飾項目は無限拡張可能（多言語原稿用紙・出版/AI校正拡張も想定）</div>
             </div>
           )}
         </>

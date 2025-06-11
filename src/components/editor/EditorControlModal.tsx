@@ -1,3 +1,4 @@
+// src/components/editor/EditorControlModal.tsx
 import React from "react";
 import type { EditorMode } from "../dashboard/FullscreenEditorModal";
 
@@ -10,7 +11,8 @@ type Props = {
   setCurrentPage: (n: number) => void;
   onSave: () => void;
   onCancel: () => void;
-  onClose: () => void; // ✖ボタン/外側クリックで呼ばれる
+  onClose: () => void;
+  language?: "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
 };
 
 const MODES: { key: EditorMode; label: string }[] = [
@@ -22,7 +24,7 @@ const MODES: { key: EditorMode; label: string }[] = [
 const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
 
 const EditorControlModal: React.FC<Props> = ({
-  open, mode, setMode, currentPage, totalPages, setCurrentPage, onSave, onCancel, onClose,
+  open, mode, setMode, currentPage, totalPages, setCurrentPage, onSave, onCancel, onClose, language = "ja",
 }) => {
   if (!open) return null;
 

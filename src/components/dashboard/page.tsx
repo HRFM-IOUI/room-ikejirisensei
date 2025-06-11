@@ -1,27 +1,29 @@
 // src/app/dashboard/page.tsx
+"use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "@/firebase";
+import { useAdminClaims } from "@/hooks/useAdminClaims";
+import Dashboard from "@/components/dashboard/Dashboard"; // ←追加！
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import Dashboard from "@/components/dashboard/Dashboard";
-import { adminAuth } from "@/firebaseAdmin";
+export default function DashboardPage() {
+  const [user, loading] = useAuthState(auth);
+  const [isAdmin, claimsLoading] = useAdminClaims();
+  const router = useRouter();
 
-export default async function DashboardPage() {
-  // cookies()はPromise型なのでawaitが必須
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    redirect("/");
-  }
-
-  try {
-    const decoded = await adminAuth.verifyIdToken(token);
-    if (decoded.email !== "ikejirisensei@test.com") {
-      redirect("/");
+  useEffect(() => {
+    if (!loading && !claimsLoading) {
+      if (!user) {
+        router.push("/login");
+      } else if (!isAdmin) {
+        router.push("/community");
+      }
     }
-    // 先生だけ通す
-    return <Dashboard />;
-  } catch {
-    redirect("/");
-  }
+  }, [user, loading, isAdmin, claimsLoading, router]);
+
+  if (loading || claimsLoading) return <div>認証確認中...</div>;
+  if (!user || !isAdmin) return null;
+
+  return <Dashboard />;
 }

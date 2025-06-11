@@ -1,4 +1,7 @@
+// functions/src/index.ts
+
 import { onObjectFinalized } from "firebase-functions/v2/storage";
+import { onCall } from "firebase-functions/v2/https";
 import * as admin from "firebase-admin";
 import * as ffmpeg from "fluent-ffmpeg";
 import * as ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
@@ -10,10 +13,11 @@ import { Storage } from "@google-cloud/storage";
 admin.initializeApp();
 const storage = new Storage();
 
+// --- 1. 動画アップロード時：自動サムネイル生成 ---
 export const generateVideoThumbnail = onObjectFinalized(
   {
-    region: "asia-northeast1", // バケットのリージョンと合わせる！
-    memory: "1GiB",            // 必要に応じて調整
+    region: "asia-northeast1", // バケットのリージョンと合わせる
+    memory: "1GiB",
     timeoutSeconds: 60,
   },
   async (event) => {
@@ -55,10 +59,10 @@ export const generateVideoThumbnail = onObjectFinalized(
     const [thumbFile] = await bucket.file(thumbStoragePath).get();
     const [thumbUrl] = await thumbFile.getSignedUrl({
       action: "read",
-      expires: "03-09-2099" // 2099年まで有効
+      expires: "03-09-2099"
     });
 
-    // FirestoreにthumbnailUrlを追記（mediaコレクション内、同名動画レコード探す）
+    // FirestoreにthumbnailUrlを追記
     const mediaRef = admin.firestore().collection("media");
     const snap = await mediaRef.where("url", "==", `https://storage.googleapis.com/${fileBucket}/${filePath}`).get();
     if (!snap.empty) {
@@ -72,3 +76,27 @@ export const generateVideoThumbnail = onObjectFinalized(
     return null;
   }
 );
+
+// --- 2. 管理画面からユーザー属性を付与：カスタムクレームAPI ---
+export const setCustomClaims = onCall(
+  { region: "asia-northeast1" }, // v2形式＋リージョン統一
+  async (request) => {
+    const context = request.auth;
+    if (!context?.token?.admin) {
+      throw new Error("permission-denied");
+    }
+    const { uid, claims } = request.data;
+    if (!uid || !claims) {
+      throw new Error("invalid-argument");
+    }
+
+    // カスタムクレーム付与
+    await admin.auth().setCustomUserClaims(uid, claims);
+
+    // Firestoreのusersコレクションにも反映（お好みで）
+    await admin.firestore().collection("users").doc(uid).set(claims, { merge: true });
+
+    return { success: true };
+  }
+);
+

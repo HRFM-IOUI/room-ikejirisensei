@@ -16,7 +16,7 @@ export default function DashboardFooter({
     <footer className={styles.dashboardFooter}>
       <button
         style={{
-          background: "#5b8dee", color: "#fff", border: "none", borderRadius: 5, padding: "9px 22px",
+          background: "#5b8dee", color: "#ffffff", border: "none", borderRadius: 5, padding: "9px 22px",
           fontWeight: 700, fontSize: 17, marginRight: 8, letterSpacing: 1
         }}
         onClick={onPublish}
@@ -25,7 +25,7 @@ export default function DashboardFooter({
       </button>
       <button
         style={{
-          background: "#b2bec3", color: "#fff", border: "none", borderRadius: 5, padding: "9px 22px",
+          background: "#b2bec3", color: "#ffffff", border: "none", borderRadius: 5, padding: "9px 22px",
           fontWeight: 700, fontSize: 17, marginRight: 8, letterSpacing: 1
         }}
         onClick={onSaveDraft}
@@ -34,7 +34,7 @@ export default function DashboardFooter({
       </button>
       <button
         style={{
-          background: "#fff", color: "#5b8dee", border: "1.5px solid #5b8dee", borderRadius: 5, padding: "9px 22px",
+          background: "#ffffff", color: "#5b8dee", border: "1.5px solid #5b8dee", borderRadius: 5, padding: "9px 22px",
           fontWeight: 700, fontSize: 17, letterSpacing: 1
         }}
         onClick={onPreview}

@@ -1,149 +1,375 @@
-'use client';
-import React, { useState, useEffect } from "react";
-import { Block } from "./dashboardConstants"; // ← createBlockを削除
+"use client";
+import React from "react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { Block } from "./dashboardConstants";
 import SortableBlock from "./SortableBlock";
-import FullscreenEditorModal from "./FullscreenEditorModal";
+
+type SupportedLang = "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
 
 type Props = {
-  blocks?: Block[];
-  selectedId?: string | null;
-  setSelectedId?: (id: string) => void;
-  handleEditBlock?: (id: string, value: string) => void;
-  handleDelete?: (id: string) => void;
+  title: string;
+  setTitle: (v: string) => void;
+  blocks: Block[];
   isEditMode?: boolean;
-  onSave?: (blocks: Block[]) => void; // 編集保存用
+  onSave: (title: string, blocks: Block[], tags?: string[]) => Promise<void> | void;
+  tags?: string[];
+  setTags?: (tags: string[]) => void;
+  onBlockSelect?: (id: string | null) => void;
+  onFullscreenEdit?: (blockId: string, language: SupportedLang) => void;
+  fullscreenLanguage?: SupportedLang;
+  onAddBlock: (type: Block["type"]) => void;
+  onDeleteBlock: (id: string) => void;
+  onBlockChange: (id: string, value: string) => void;
+  onSortBlocks: (activeId: string, overId: string) => void;
 };
 
 export default function ArticleEditor({
-  blocks: initialBlocks = [],
-  selectedId: propSelectedId = null,
-  setSelectedId: propSetSelectedId,
-  handleEditBlock: propHandleEditBlock,
-  handleDelete: propHandleDelete,
+  title,
+  setTitle,
+  blocks,
   isEditMode = false,
   onSave,
+  tags = [],
+  setTags,
+  onBlockSelect,
+  onFullscreenEdit,
+  fullscreenLanguage = "ja",
+  onAddBlock,
+  onDeleteBlock,
+  onBlockChange,
+  onSortBlocks,
 }: Props) {
-  const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
-  const [selectedId, setSelectedId] = useState<string | null>(propSelectedId);
-  const [fullscreenEdit, setFullscreenEdit] = useState(false);
+  const [tagInput, setTagInput] = React.useState("");
+  const [blockLanguage, setBlockLanguage] = React.useState<SupportedLang>(fullscreenLanguage);
+  const [autoTitleActive, setAutoTitleActive] = React.useState(true);
 
-  // 外部stateと同期
-  useEffect(() => {
-    setBlocks(initialBlocks);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(initialBlocks)]);
+  // D&Dのセンサー
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor)
+  );
 
-  // ブロック編集
-  const handleEditBlock = (id: string, value: string) => {
-    setBlocks(bs => bs.map(b => b.id === id ? { ...b, content: value } : b));
+  // 並び替えイベント
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (active?.id && over?.id && active.id !== over.id) {
+      onSortBlocks(active.id, over.id);
+    }
   };
 
-  // 削除
-  const handleDelete = (id: string) => {
-    setBlocks(bs => bs.filter(b => b.id !== id));
-    if (selectedId === id) setSelectedId(null);
+  // タグ追加/削除
+  const handleAddTag = () => {
+    const val = tagInput.trim();
+    if (val && !tags.includes(val) && val.length <= 20) {
+      setTags?.([...tags, val]);
+      setTagInput("");
+    } else if (val.length > 20) {
+      alert("タグは20文字以内で入力してください。");
+    }
+  };
+  const handleDeleteTag = (tag: string) => {
+    setTags?.(tags.filter(t => t !== tag));
   };
 
-  // フルスクリーン保存
-  const handleSaveFullscreen = (value: string) => {
-    if (!selectedId) return;
-    setBlocks(bs =>
-      bs.map(b => b.id === selectedId ? { ...b, content: value } : b)
-    );
-    setFullscreenEdit(false);
+  // タイトル自動生成（先頭blockの最初の30字を候補に）
+  React.useEffect(() => {
+    if (!autoTitleActive || title.trim()) return;
+    const firstContent = blocks.find(b => b.content?.trim())?.content?.trim();
+    if (firstContent) {
+      let autoTitle = firstContent.split(/[\n。.!?]/)[0].slice(0, 30);
+      if (autoTitle.length < firstContent.length) autoTitle += "…";
+      setTitle(`（自動生成: ${autoTitle}）`);
+    }
+  }, [blocks, autoTitleActive, title, setTitle]);
+
+  // 手動タイトル入力で自動生成解除
+  const handleTitleChange = (v: string) => {
+    setTitle(v);
+    setAutoTitleActive(false);
   };
 
-  // 編集保存
-  const handleEditSave = () => {
-    if (onSave) onSave(blocks);
+  // 記事保存
+  const handleSave = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim() || title.startsWith("（自動生成: ")) {
+      alert("タイトルを入力してください。");
+      return;
+    }
+    if (title.length > 120) {
+      alert("タイトルは120文字以内で入力してください。");
+      return;
+    }
+    if (
+      !blocks.length ||
+      blocks.every(b => {
+        if (b.type === "heading" || b.type === "text") {
+          return !b.content.trim();
+        }
+        if (b.type === "image" || b.type === "video") {
+          return !b.content;
+        }
+        return true;
+      })
+    ) {
+      alert("本文が空です。");
+      return;
+    }
+    onSave(title.trim(), blocks, tags);
   };
 
-  // 選択中ブロック
-  const selectedBlock = blocks.find(b => b.id === selectedId);
+  // 言語選択肢
+  const languageOptions = [
+    { label: "日本語", value: "ja" },
+    { label: "English", value: "en" },
+    { label: "Türkçe", value: "tr" },
+    { label: "中文", value: "zh" },
+    { label: "한국어", value: "ko" },
+    { label: "Русский", value: "ru" },
+    { label: "العربية", value: "ar" },
+  ];
 
   return (
-    <div
+    <form
+      onSubmit={handleSave}
       style={{
         display: "flex",
-        flexDirection: "row",
-        gap: 24,
+        flexDirection: "column",
+        gap: 22,
         width: "100%",
-        alignItems: "flex-start",
-        minHeight: 480,
-        justifyContent: "center",
+        background: "#ffffff",
+        borderRadius: 12,
+        boxShadow: isEditMode ? "0 3px 18px #19234920" : undefined,
+        padding: isEditMode ? "18px 16px" : "12px 0",
       }}
+      aria-label={isEditMode ? "記事を編集" : "新規記事作成"}
     >
-      {/* メイン */}
-      <main
-        style={{
-          flex: 1,
-          background: "#fff",
-          borderRadius: 18,
-          minHeight: 480,
-          boxShadow: "0 6px 24px #19234914",
-          padding: "40px 48px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          maxWidth: 1100,
-          margin: "0 auto",
-          transition: "max-width 0.2s",
-        }}
-      >
-        {blocks.length === 0 ? (
-          <div style={{ color: "#aaa", fontWeight: 700, fontSize: 20, margin: 60 }}>
-            ブロックを追加してください
-          </div>
-        ) : (
-          blocks.map((block) => (
-            <SortableBlock
-              key={block.id}
-              block={block}
-              selectedId={selectedId || ""}
-              setSelectedId={propSetSelectedId || setSelectedId}
-              handleEditBlock={propHandleEditBlock || handleEditBlock}
-              handleDelete={propHandleDelete || handleDelete}
-            />
-          ))
-        )}
-
-        {/* フッター・保存ボタン（編集時のみ） */}
-        <div style={{ width: "100%", textAlign: "center", marginTop: 18 }}>
-          {isEditMode && onSave && (
-            <button
-              onClick={handleEditSave}
-              style={{
-                background: "#5b8dee",
-                color: "#fff",
-                border: "none",
-                borderRadius: 8,
-                padding: "14px 48px",
-                fontWeight: 800,
-                fontSize: 18,
-                letterSpacing: 1,
-                cursor: "pointer",
-                marginTop: 18,
-                boxShadow: "0 2px 8px #5b8dee26",
-              }}
-              type="button"
-            >
-              編集を保存する
-            </button>
-          )}
-        </div>
-      </main>
-      {/* フルスクリーンモーダル */}
-      {selectedBlock && (
-        <FullscreenEditorModal
-          open={fullscreenEdit}
-          value={selectedBlock.content}
-          fontFamily={selectedBlock.style?.fontFamily}
-          fontSize={selectedBlock.style?.fontSize}
-          color={selectedBlock.style?.color}
-          onClose={() => setFullscreenEdit(false)}
-          onSave={handleSaveFullscreen}
+      <h3 style={{
+        fontWeight: 800,
+        fontSize: 18,
+        color: "#192349",
+        marginBottom: 6,
+        letterSpacing: 0.5,
+      }}>
+        {isEditMode ? "記事を編集" : "新規記事作成"}
+      </h3>
+      {/* タイトル入力 */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
+        <label htmlFor="title-input" style={{
+          fontWeight: 700, color: "#192349", marginBottom: 2, fontSize: 15
+        }}>
+          タイトル <span style={{ color: "#e36", fontSize: 12, fontWeight: 500 }}>*必須</span>
+        </label>
+        <input
+          id="title-input"
+          type="text"
+          value={title}
+          onChange={e => handleTitleChange(e.target.value)}
+          placeholder="タイトルを入力（最大120文字）"
+          maxLength={120}
+          style={{
+            width: "100%",
+            padding: "8px 14px",
+            borderRadius: 7,
+            border: "1.5px solid #ccd5f2",
+            fontSize: 17,
+            fontWeight: 700,
+            color: "#192349"
+          }}
+          aria-label="記事タイトル"
+          required
         />
+        {autoTitleActive && (
+          <span style={{
+            color: "#5b8dee", fontSize: 13, fontWeight: 500, cursor: "pointer",
+            marginTop: 2, alignSelf: "flex-start"
+          }}
+            onClick={() => setAutoTitleActive(false)}
+          >
+            タイトルは本文から自動生成中 / クリックで手入力モード
+          </span>
+        )}
+      </div>
+      {/* タグ編集 */}
+      <div style={{
+        display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 6
+      }}>
+        <span style={{ fontWeight: 700, color: "#192349", marginRight: 5 }}>タグ:</span>
+        {tags.map(tag => (
+          <span
+            key={tag}
+            style={{
+              background: "#e3e8fc",
+              color: "#192349",
+              borderRadius: 8,
+              padding: "2px 12px",
+              fontWeight: 700,
+              fontSize: 13,
+              marginRight: 4,
+              marginBottom: 2,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+            }}
+          >
+            {tag}
+            <button
+              type="button"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#888",
+                marginLeft: 3,
+                cursor: "pointer",
+                fontSize: 14,
+                fontWeight: 700,
+                padding: 0,
+              }}
+              onClick={() => handleDeleteTag(tag)}
+              aria-label={`タグ「${tag}」を削除`}
+              tabIndex={0}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={tagInput}
+          onChange={e => setTagInput(e.target.value)}
+          placeholder="タグを追加"
+          style={{
+            padding: "5px 10px",
+            borderRadius: 6,
+            border: "1px solid #ccd5f2",
+            fontSize: 14,
+            minWidth: 90,
+          }}
+          maxLength={20}
+          onKeyDown={e => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleAddTag();
+            }
+          }}
+          aria-label="新しいタグを入力"
+        />
+        <button
+          type="button"
+          onClick={handleAddTag}
+          style={{
+            background: "#5b8dee",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 8,
+            fontWeight: 700,
+            fontSize: 14,
+            padding: "6px 15px",
+            marginLeft: 6,
+            cursor: "pointer",
+          }}
+        >
+          追加
+        </button>
+      </div>
+      {/* 言語選択 */}
+      {onFullscreenEdit && (
+        <div style={{ marginBottom: 7, display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontWeight: 700, color: "#192349" }}>原稿用紙言語:</span>
+          <select
+            value={blockLanguage}
+            onChange={e => setBlockLanguage(e.target.value as SupportedLang)}
+            style={{
+              fontWeight: 700,
+              borderRadius: 7,
+              border: "1.2px solid #e0e4ef",
+              padding: "6px 13px",
+              fontSize: 15,
+            }}
+            aria-label="原稿用紙言語"
+          >
+            {languageOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
       )}
-    </div>
+      {/* D&Dブロックリスト */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={blocks.map(b => b.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
+            {blocks.map((block, idx) => (
+              <SortableBlock
+                key={block.id}
+                block={block}
+                index={idx}
+                onSelect={() => onBlockSelect?.(block.id)}
+                onFullscreenEdit={(blockId: string) =>
+                  onFullscreenEdit?.(blockId, blockLanguage)
+                }
+                language={blockLanguage}
+                onChange={onBlockChange}
+                onDelete={onDeleteBlock}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
+      {/* ブロック追加 */}
+      <div>
+        <button
+          type="button"
+          onClick={() => onAddBlock("text")}
+          style={{
+            background: "#e3e8fc",
+            color: "#192349",
+            border: "none",
+            borderRadius: 8,
+            fontWeight: 700,
+            fontSize: 15,
+            padding: "7px 22px",
+            marginTop: 5,
+            cursor: "pointer",
+          }}
+        >
+          ＋ 段落を追加
+        </button>
+      </div>
+      {/* 保存ボタン */}
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+        <button
+          type="submit"
+          style={{
+            background: "#5b8dee",
+            color: "#ffffff",
+            border: "none",
+            borderRadius: 8,
+            fontWeight: 800,
+            fontSize: 17,
+            padding: "11px 30px",
+            cursor: "pointer",
+          }}
+        >
+          {isEditMode ? "保存する" : "公開する"}
+        </button>
+      </div>
+    </form>
   );
 }

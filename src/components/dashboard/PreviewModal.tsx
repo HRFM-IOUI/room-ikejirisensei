@@ -72,7 +72,7 @@ export default function PreviewModal({ open, blocks, onClose }: Props) {
                       fontFamily: block.style?.fontFamily || "'Noto Sans JP', sans-serif",
                       fontSize: block.style?.fontSize || "2.1rem",
                       fontWeight: block.style?.fontWeight ?? 700,
-                      color: block.style?.color || "#222",
+                      color: block.style?.color || "#222222",
                       background: block.style?.backgroundColor || "transparent",
                       padding: "8px 0 2px 0",
                       borderBottom: "2px solid #e9ebf6",

@@ -1,206 +1,215 @@
 import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Block } from "./dashboardConstants";
-import styles from "./Dashboard.module.css";
-import { FaGripVertical, FaTrash } from "react-icons/fa";
-import Image from "next/image";
+import { FaGripVertical, FaTrash, FaRegStickyNote } from "react-icons/fa";
+
+export type SupportedLang = "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
+
+export type Block = {
+  id: string;
+  type: "heading" | "text" | "image" | "video";
+  content: string;
+  // styleなど拡張はここに
+};
 
 type Props = {
   block: Block;
-  selectedId: string | null;
-  setSelectedId: (id: string) => void;
-  handleEditBlock: (id: string, value: string) => void;
-  handleDelete: (id: string) => void;
+  index: number;
+  onChange: (id: string, value: string) => void;
+  onDelete: (id: string) => void;
+  onSelect?: () => void;
+  onFullscreenEdit?: (blockId: string, language: SupportedLang) => void;
+  language?: SupportedLang;
 };
 
 export default function SortableBlock({
   block,
-  selectedId,
-  setSelectedId,
-  handleEditBlock,
-  handleDelete,
+  index,
+  onChange,
+  onDelete,
+  onSelect,
+  onFullscreenEdit,
+  language = "ja",
 }: Props) {
+  // D&D用のhook
   const {
+    setNodeRef,
     attributes,
     listeners,
-    setNodeRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ id: block.id });
 
-  // D&D影・アニメーションと幅いっぱい
-  const style: React.CSSProperties = {
-    width: "100%",
-    maxWidth: "100%",
-    marginBottom: 26,
-    padding: "24px 30px",
-    position: "relative",
-    background: selectedId === block.id ? "#f1f8fd" : "#fff",
-    border: "2px solid " + (selectedId === block.id ? "#5b8dee" : "#dde2ea"),
-    borderRadius: 14,
-    boxShadow: isDragging
-      ? "0 12px 32px 0 rgba(91, 141, 238, 0.22), 0 1.5px 5px 0 rgba(0,0,0,0.09)"
-      : selectedId === block.id
-      ? "0 0 0 2.5px #5b8dee44"
-      : "0 2px 8px 0 rgba(30,40,80,0.04)",
-    cursor: isDragging ? "grabbing" : "pointer",
-    opacity: isDragging ? 0.82 : 1,
-    transform: CSS.Transform.toString(transform),
-    transition:
-      transition ||
-      "box-shadow 0.18s cubic-bezier(.44,1.54,.85,1), opacity 0.17s, transform 0.22s, border 0.2s",
-    zIndex: isDragging ? 3 : "auto",
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    minHeight: block.type === "heading" ? 72 : 68,
+  // 各ブロックタイプごとの編集UI
+  const renderBlockContent = () => {
+    if (block.type === "heading") {
+      return (
+        <input
+          type="text"
+          value={block.content}
+          onChange={e => onChange(block.id, e.target.value)}
+          style={{
+            width: "100%",
+            fontWeight: 800,
+            fontSize: 22,
+            border: "none",
+            outline: "none",
+            background: "none",
+            color: "#18191a",
+            padding: "8px 10px",
+          }}
+          aria-label={`見出しブロック${index + 1}`}
+        />
+      );
+    }
+    if (block.type === "text") {
+      return (
+        <textarea
+          value={block.content}
+          onChange={e => onChange(block.id, e.target.value)}
+          style={{
+            width: "100%",
+            fontWeight: 500,
+            fontSize: 17,
+            minHeight: 56,
+            border: "none",
+            outline: "none",
+            background: "none",
+            color: "#18191a",
+            padding: "8px 10px",
+            resize: "vertical",
+          }}
+          aria-label={`テキストブロック${index + 1}`}
+        />
+      );
+    }
+    if (block.type === "image") {
+      return block.content ? (
+        <img
+          src={block.content}
+          alt="画像ブロック"
+          style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
+        />
+      ) : (
+        <input
+          type="text"
+          value={block.content}
+          onChange={e => onChange(block.id, e.target.value)}
+          placeholder="画像URLを入力"
+          style={{ width: "100%" }}
+          aria-label="画像URL入力"
+        />
+      );
+    }
+    if (block.type === "video") {
+      return block.content ? (
+        <video
+          src={block.content}
+          controls
+          style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
+        />
+      ) : (
+        <input
+          type="text"
+          value={block.content}
+          onChange={e => onChange(block.id, e.target.value)}
+          placeholder="動画URLを入力"
+          style={{ width: "100%" }}
+          aria-label="動画URL入力"
+        />
+      );
+    }
+    return null;
   };
-
-  // style共通部分
-  const commonInputStyle: React.CSSProperties = {
-    width: "100%",
-    border: "none",
-    outline: "none",
-    background: "none",
-    color: block.style?.color || "#18191a",
-    fontFamily: block.style?.fontFamily || "Noto Sans JP, Arial, sans-serif",
-    backgroundColor: block.style?.backgroundColor || "transparent",
-    textDecoration: block.style?.textDecoration || "",
-    transition: "color .2s, font-family .2s, font-size .2s, background .2s, text-decoration .2s",
-    padding: 0,
-    boxSizing: "border-box",
-  };
-
-  const inputStyle: React.CSSProperties =
-    block.type === "heading"
-      ? {
-          ...commonInputStyle,
-          fontWeight: block.style?.fontWeight || 800,
-          fontSize: block.style?.fontSize || "2.2rem",
-          lineHeight: 1.35,
-        }
-      : {
-          ...commonInputStyle,
-          fontWeight: block.style?.fontWeight || 500,
-          fontSize: block.style?.fontSize || "1.24rem",
-          minHeight: 58,
-          resize: "vertical",
-          lineHeight: 1.85,
-        };
 
   return (
     <div
       ref={setNodeRef}
-      className={styles.sortableBlock}
-      style={style}
-      onClick={() => setSelectedId(block.id)}
-      tabIndex={0}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        padding: 14,
+        margin: "12px 0",
+        background: "#fff",
+        border: "2px solid #dde2ea",
+        borderRadius: 11,
+        boxShadow: isDragging ? "0 6px 20px #2221" : undefined,
+        transform: CSS.Transform.toString(transform),
+        transition,
+        minHeight: 56,
+        cursor: isDragging ? "grabbing" : undefined,
+      }}
+      {...attributes}
     >
-      {/* グリップと削除 */}
-      <div
+      {/* グリップ（D&D）左端 */}
+      <button
+        type="button"
+        {...listeners}
         style={{
-          position: "absolute",
-          right: 16,
-          top: 16,
           display: "flex",
-          gap: 13,
           alignItems: "center",
-          zIndex: 2,
+          justifyContent: "center",
+          cursor: "grab",  // グリップボタン全体に対してgrabカーソルを適用
+          fontSize: 27,
+          color: "#3a5cbe",
+          width: 38,  // 固定の幅で表示
+          height: 38,  // 固定の高さで表示
+          marginRight: 17,
+          userSelect: "none",
+          borderRadius: 7,
+          background: isDragging ? "#e3e8fc" : "#f3f5ff",
+          boxShadow: isDragging ? "0 0 0 2px #5b8dee88" : undefined,
+          transition: "background 0.15s, box-shadow 0.15s",
+          position: "relative",  // アイコンを中央に配置するためにpositionを追加
         }}
+        title="ドラッグで並べ替え"
+        aria-label="ドラッグで並べ替え"
+        tabIndex={-1}
       >
-        <span
-          {...attributes}
-          {...listeners}
-          style={{
-            color: "#5b8dee",
-            fontWeight: 700,
-            cursor: "grab",
-            fontSize: 25,
-            userSelect: "none",
-            display: "flex",
-            alignItems: "center",
-          }}
-          tabIndex={-1}
-          title="ドラッグして並べ替え"
-        >
-          <FaGripVertical />
-        </span>
-        <button
-          onClick={e => {
-            e.stopPropagation();
-            handleDelete(block.id);
-          }}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#e17055",
-            fontWeight: 700,
-            cursor: "pointer",
-            fontSize: 21,
-            display: "flex",
-            alignItems: "center",
-          }}
-          title="削除"
-        >
-          <FaTrash />
-        </button>
+        <FaGripVertical style={{ position: "absolute" }} />  {/* アイコンをボタンの中央に配置 */}
+      </button>
+
+      {/* 編集領域（中央） */}
+      <div style={{ flex: 1, minWidth: 0 }} onClick={onSelect}>
+        {renderBlockContent()}
       </div>
 
-      {/* インライン編集UI */}
-      <div style={{ flex: 1, width: "100%" }}>
-        {block.type === "heading" ? (
-          <input
-            style={inputStyle}
-            value={block.content}
-            onChange={e => handleEditBlock(block.id, e.target.value)}
-            spellCheck={false}
-          />
-        ) : block.type === "text" ? (
-          <textarea
-            style={inputStyle}
-            value={block.content}
-            onChange={e => handleEditBlock(block.id, e.target.value)}
-            spellCheck={false}
-          />
-        ) : block.type === "image" ? (
-          block.content ? (
-            <Image
-              src={block.content}
-              alt="アップロード画像"
-              style={{ maxWidth: "100%", borderRadius: 8 }}
-              width={600}
-              height={350}
-              unoptimized
-            />
-          ) : (
-            <input
-              type="text"
-              placeholder="画像URLを入力"
-              value={block.content}
-              onChange={e => handleEditBlock(block.id, e.target.value)}
-              style={{ width: "100%" }}
-            />
-          )
-        ) : block.type === "video" ? (
-          block.content ? (
-            <video
-              src={block.content}
-              controls
-              style={{ maxWidth: "100%", borderRadius: 8 }}
-            />
-          ) : (
-            <input
-              type="text"
-              placeholder="動画URLを入力"
-              value={block.content}
-              onChange={e => handleEditBlock(block.id, e.target.value)}
-              style={{ width: "100%" }}
-            />
-          )
-        ) : null}
-      </div>
+      {/* 右端：メモ・ゴミ箱 */}
+      <button
+        type="button"
+        onClick={() => onFullscreenEdit?.(block.id, language)}
+        style={{
+          background: "none",
+          border: "none",
+          marginLeft: 8,
+          marginRight: 5,
+          cursor: "pointer",
+          fontSize: 21,
+          color: "#2c78f7",
+          padding: 5,
+        }}
+        title="原稿用紙モード"
+        aria-label="原稿用紙モード"
+      >
+        <FaRegStickyNote />
+      </button>
+      <button
+        type="button"
+        onClick={() => onDelete(block.id)}
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 21,
+          color: "#e17055",
+          padding: 5,
+        }}
+        title="削除"
+        aria-label="ブロック削除"
+      >
+        <FaTrash />
+      </button>
     </div>
   );
 }

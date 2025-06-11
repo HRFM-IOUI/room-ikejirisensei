@@ -3,13 +3,13 @@ import { BlockType, blockTemplates } from "./dashboardConstants";
 import styles from "./Dashboard.module.css";
 
 type Props = {
-  handleAddBlock: (type: BlockType) => void;
+  onAddBlock: (type: BlockType) => void;
 };
 
-export default function DashboardSidebar({ handleAddBlock }: Props) {
+export default function DashboardSidebar({ onAddBlock }: Props) {
   const labelColor = "#192349";
   return (
-    <aside className={styles.dashboardSidebar}>
+    <aside className={styles.dashboardSidebar} aria-label="ブロック追加サイドバー">
       <h2
         style={{
           fontSize: 18,
@@ -38,7 +38,8 @@ export default function DashboardSidebar({ handleAddBlock }: Props) {
             cursor: "pointer",
             letterSpacing: 1.1,
           }}
-          onClick={() => handleAddBlock(bt.type)}
+          onClick={() => onAddBlock(bt.type)}
+          aria-label={`ブロック追加: ${bt.label}`}
         >
           ＋ {bt.label}
         </button>

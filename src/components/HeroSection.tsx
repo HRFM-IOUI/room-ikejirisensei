@@ -28,18 +28,18 @@ function formatDate(dateVal: string | number | { seconds?: number }) {
 }
 
 export default function HeroSection() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<any[]>([]); // blocks対応のためany型
 
   useEffect(() => {
     (async () => {
       const postsQuery = query(
         collection(db, "posts"),
-        orderBy("date", "desc"),
+        orderBy("createdAt", "desc"),
         limit(5)
       );
       const snapshot = await getDocs(postsQuery);
       const fetchedPosts = snapshot.docs.map(
-        doc => ({ id: doc.id, ...doc.data() } as Post)
+        doc => ({ id: doc.id, ...doc.data() })
       );
       setPosts(fetchedPosts);
     })();
@@ -66,39 +66,48 @@ export default function HeroSection() {
           最新記事
         </h2>
         <ul className="flex flex-col gap-4 sm:gap-6">
-          {posts.map((p, idx) => (
-            <li
-              key={p.id || idx}
-              className="
-                flex items-center gap-3 sm:gap-4 p-2 sm:p-4 bg-white
-                rounded-tl-2xl rounded-br-2xl rounded-tr-lg rounded-bl-lg
-                border-t-2 border-b-2 border-[#192349]
-                shadow-[0_2px_8px_0_rgba(25,35,73,0.06)]
-                hover:shadow-lg hover:scale-[1.03] hover:border-[#004080] transition-all
-                duration-150
-              "
-              style={{ borderLeft: "none", borderRight: "none" }}
-            >
-              <Link href={`/posts/${p.id}`} className="flex items-center gap-3 sm:gap-4 w-full group">
-                <Image
-                  src={p.image || DEFAULT_IMAGE}
-                  alt={p.title}
-                  className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-xl border border-[#192349]/10 group-hover:opacity-90 transition"
-                  width={80}
-                  height={80}
-                  unoptimized
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="block text-base sm:text-lg font-bold text-[#192349] truncate group-hover:underline">
-                    {p.title}
+          {posts.map((p, idx) => {
+            // blocks配列から最初のimageブロックを取得
+            const firstImage = p.blocks?.find?.((b: any) => b.type === "image" && b.content);
+
+            return (
+              <li
+                key={p.id || idx}
+                className="
+                  flex items-center gap-3 sm:gap-4 p-2 sm:p-4 bg-white
+                  rounded-tl-2xl rounded-br-2xl rounded-tr-lg rounded-bl-lg
+                  border-t-2 border-b-2 border-[#192349]
+                  shadow-[0_2px_8px_0_rgba(25,35,73,0.06)]
+                  hover:shadow-lg hover:scale-[1.03] hover:border-[#004080] transition-all
+                  duration-150
+                "
+                style={{ borderLeft: "none", borderRight: "none" }}
+              >
+                <Link href={`/posts/${p.id}`} className="flex items-center gap-3 sm:gap-4 w-full group">
+                  <Image
+                    src={
+                      firstImage?.content ||
+                      p.image ||
+                      DEFAULT_IMAGE
+                    }
+                    alt={p.title}
+                    className="w-14 h-14 sm:w-20 sm:h-20 object-cover rounded-xl border border-[#192349]/10 group-hover:opacity-90 transition"
+                    width={80}
+                    height={80}
+                    unoptimized
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="block text-base sm:text-lg font-bold text-[#192349] truncate group-hover:underline">
+                      {p.title}
+                    </div>
+                    <div className="text-xs text-[#192349] opacity-70 mt-2">
+                      {formatDate(p.createdAt)}
+                    </div>
                   </div>
-                  <div className="text-xs text-[#192349] opacity-70 mt-2">
-                    {formatDate(p.date)}
-                  </div>
-                </div>
-              </Link>
-            </li>
-          ))}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
         {/* 記事一覧への導線ボタン */}
         <div className="mt-5 sm:mt-6 text-center">

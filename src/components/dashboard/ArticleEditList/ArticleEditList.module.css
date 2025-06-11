@@ -1,0 +1,185 @@
+.section {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 6px 24px #0001;
+  padding: 32px 18px;
+  width: 100%;
+}
+.heading {
+  font-weight: 800;
+  font-size: 22px;
+  color: #192349;
+  margin-bottom: 18px;
+}
+.batchDeleteBar {
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.deleteButton {
+  background: #ffeaea;
+  color: #c00;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 7px 20px;
+  cursor: pointer;
+  margin-right: 8px;
+  box-shadow: 0 1px 3px #c0032b15;
+}
+.note {
+  color: #babfca;
+  font-size: 14px;
+}
+.filterBar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  align-items: center;
+}
+.searchInput {
+  border: 1px solid #c3d3ea;
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 16px;
+  color: #192349;
+  width: 220px;
+  outline: none;
+}
+.tagsFilter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tagButton, .tagButtonActive {
+  border: none;
+  border-radius: 8px;
+  padding: 4px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-right: 3px;
+  transition: background .16s;
+}
+.tagButton {
+  background: #f3f7fa;
+  color: #192349;
+}
+.tagButtonActive {
+  background: #5b8dee;
+  color: #fff;
+}
+.list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.listItem {
+  border-bottom: 1px solid #e2e8ef;
+  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #fff;
+}
+.listItemCheck {
+  margin-right: 9px;
+}
+.listItemMain {
+  flex: 1;
+  min-width: 0;
+}
+.listItemTitle {
+  font-weight: 700;
+  color: #192349;
+  font-size: 16px;
+  display: inline-block;
+  margin-bottom: 0;
+}
+.listItemDate {
+  color: #babfca;
+  font-size: 13px;
+  margin-left: 8px;
+  font-weight: 500;
+  vertical-align: middle;
+}
+.listItemTags {
+  margin-left: 10px;
+}
+.tag {
+  background: #e8f0fe;
+  color: #192349;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 2.5px 11px;
+  font-size: 13px;
+  margin-right: 6px;
+  margin-top: 2px;
+  display: inline-block;
+}
+.listItemButtons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.statusButton {
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 6px 15px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+}
+.editButton {
+  background: #192349;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 15px;
+  margin-left: 3px;
+  cursor: pointer;
+}
+.duplicateButton {
+  background: #b2bec3;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 15px;
+  margin-left: 3px;
+  cursor: pointer;
+}
+.deleteButton {
+  background: #ffeaea;
+  color: #c00;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 14px;
+  font-weight: 700;
+  font-size: 15px;
+  margin-left: 3px;
+  cursor: pointer;
+}
+.loading {
+  color: #192349;
+  font-weight: 600;
+  margin-top: 40px;
+}
+.empty {
+  color: #babfca;
+  font-weight: 600;
+  margin-top: 40px;
+}

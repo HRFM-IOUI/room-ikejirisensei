@@ -1,3 +1,4 @@
+// src/app/posts/page.tsx
 "use client";
 import React, { useEffect, useState } from "react";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
@@ -6,9 +7,8 @@ import type { Post } from "@/types/post";
 import Link from "next/link";
 import { FaCalendarAlt, FaRegHeart, FaHeart, FaShareAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import Image from "next/image"; // 追加
 
-// タグごとに色分けするカラーマップ
+// タグごとに色分け
 const TAG_COLORS: { [key: string]: string } = {
   "区政": "bg-blue-500",
   "イベント": "bg-green-500",
@@ -18,7 +18,7 @@ const TAG_COLORS: { [key: string]: string } = {
   "その他": "bg-gray-500",
 };
 
-// お気に入り（仮機能：ローカルのみ）
+// お気に入り（ローカルのみ）
 function useFavorites() {
   const [favs, setFavs] = useState<string[]>([]);
   useEffect(() => {
@@ -36,14 +36,14 @@ function useFavorites() {
   return { favs, toggleFav };
 }
 
-// 日付フォーマット
-function formatDate(dateVal: string | number | { seconds?: number }) {
-  if (!dateVal) return "";
+// createdAtフォーマット
+function formatDate(val: string | number | { seconds?: number }) {
+  if (!val) return "";
   let d: Date;
-  if (typeof dateVal === "object" && dateVal !== null && "seconds" in dateVal && typeof dateVal.seconds === "number") {
-    d = new Date(dateVal.seconds * 1000);
+  if (typeof val === "object" && val !== null && "seconds" in val && typeof val.seconds === "number") {
+    d = new Date(val.seconds * 1000);
   } else {
-    d = new Date(dateVal as string | number);
+    d = new Date(val as string | number);
   }
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -51,31 +51,26 @@ function formatDate(dateVal: string | number | { seconds?: number }) {
   return `${yyyy}.${mm}.${dd}`;
 }
 
-
-// メインコンポーネント
 export default function PostsPage() {
-  const [posts, setPosts] = useState<Post[]>([]);
+  const [posts, setPosts] = useState<any[]>([]); // blocksも対応
   const [loading, setLoading] = useState(true);
   const { favs, toggleFav } = useFavorites();
   const router = useRouter();
 
   useEffect(() => {
     (async () => {
-      const q = query(collection(db, "posts"), orderBy("date", "desc"));
+      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
-      setPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Post)));
+      setPosts(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       setLoading(false);
     })();
   }, []);
 
   // シェアボタン
-  const handleShare = (post: Post) => {
+  const handleShare = (post: any) => {
     const url = typeof window !== "undefined" ? window.location.origin + `/posts/${post.id}` : "";
     if (navigator.share) {
-      navigator.share({
-        title: post.title,
-        url,
-      });
+      navigator.share({ title: post.title, url });
     } else {
       navigator.clipboard.writeText(url);
       alert("記事URLをコピーしました！");
@@ -95,106 +90,98 @@ export default function PostsPage() {
           トップページへ戻る
         </Link>
       </div>
-      {/* カードグリッド */}
       <section className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading ? (
           <div className="text-lg text-gray-500 text-center py-16 col-span-full">記事を読み込み中…</div>
         ) : posts.length === 0 ? (
           <div className="text-lg text-gray-400 text-center py-16 col-span-full">まだ記事がありません。</div>
         ) : (
-          posts.map((post, i) => (
-            <div
-              key={post.id}
-              className={`
-                group relative block rounded-2xl overflow-hidden shadow-lg border border-[#e3e8f8]
-                hover:shadow-2xl hover:scale-[1.03] hover:border-[#192349] transition-all duration-200
-                bg-white cursor-pointer ripple-effect animate-fadein
-              `}
-              style={{
-                minHeight: 280,
-                animationDelay: `${i * 70}ms`
-              }}
-              onClick={e => {
-                // カード全体クリックで詳細へ
-                if ((e.target as HTMLElement).closest(".btn-card-action")) return;
-                router.push(`/posts/${post.id}`);
-              }}
-            >
-              {/* Ripple effect用: CSSのみでOK */}
-              <span className="ripple"></span>
-              {/* カード画像 */}
-              <div className="relative w-full h-48 overflow-hidden">
-                <Image
-                  src={post.image || "/logo.svg"}
-                  alt={post.title}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 group-hover:brightness-110"
-                  width={480}
-                  height={192}
-                  unoptimized
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/0 opacity-75 group-hover:opacity-85 transition" />
-                {/* フェードインタイトル */}
-                <div
-                  className={`
-                    absolute left-0 right-0 bottom-0 px-5 pb-4 pt-2
-                    flex flex-col items-start
-                  `}
-                >
-                  <h2 className="text-white text-xl font-extrabold drop-shadow-lg animate-fadein">
-                    {post.title}
-                  </h2>
-                  {/* タグ・カテゴリラベル */}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {(post.tags ?? ['お知らせ']).map((tag: string) => (
-                      <span key={tag}
-                        className={`
-                          inline-block text-xs font-bold px-2 py-1 rounded-full text-white shadow
-                          ${TAG_COLORS[tag] || "bg-gray-500"}
-                        `}
-                      >{tag}</span>
-                    ))}
-                    {post.category && (
-                      <span className="inline-block text-xs font-bold px-2 py-1 rounded-full bg-black/40 text-white ml-1">
-                        {post.category}
-                      </span>
-                    )}
+          posts.map((post, i) => {
+            // サムネイル画像を blocks の最初の image ブロックから取得
+            const firstImage = post.blocks?.find?.((b: any) => b.type === "image" && b.content);
+
+            return (
+              <div
+                key={post.id}
+                className={`
+                  group relative block rounded-2xl overflow-hidden shadow-lg border border-[#e3e8f8]
+                  hover:shadow-2xl hover:scale-[1.03] hover:border-[#192349] transition-all duration-200
+                  bg-white cursor-pointer ripple-effect animate-fadein
+                `}
+                style={{
+                  minHeight: 280,
+                  animationDelay: `${i * 70}ms`
+                }}
+                onClick={e => {
+                  if ((e.target as HTMLElement).closest(".btn-card-action")) return;
+                  router.push(`/posts/${post.id}`);
+                }}
+              >
+                <span className="ripple"></span>
+                <div className="relative w-full h-48 overflow-hidden">
+                  {/* サムネイル：blocks画像 or デフォルト */}
+                  <img
+                    src={firstImage?.content || "/logo.svg"}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 group-hover:brightness-110"
+                    width={480}
+                    height={192}
+                    style={{ objectFit: "cover" }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-black/0 opacity-75 group-hover:opacity-85 transition" />
+                  <div className="absolute left-0 right-0 bottom-0 px-5 pb-4 pt-2 flex flex-col items-start">
+                    <h2 className="text-white text-xl font-extrabold drop-shadow-lg animate-fadein">
+                      {post.title}
+                    </h2>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {(post.tags ?? ['お知らせ']).map((tag: string) => (
+                        <span key={tag}
+                          className={`
+                            inline-block text-xs font-bold px-2 py-1 rounded-full text-white shadow
+                            ${TAG_COLORS[tag] || "bg-gray-500"}
+                          `}
+                        >{tag}</span>
+                      ))}
+                      {post.category && (
+                        <span className="inline-block text-xs font-bold px-2 py-1 rounded-full bg-black/40 text-white ml-1">
+                          {post.category}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+                <div className="absolute top-4 left-4 flex items-center gap-1 bg-[#fff9] rounded-full px-3 py-1 shadow text-[#192349] font-bold text-xs">
+                  <FaCalendarAlt className="text-blue-700 mr-1" /> {formatDate(post.createdAt)}
+                </div>
+                <div className="absolute top-4 right-4 flex gap-3 z-10">
+                  <button
+                    className="btn-card-action"
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleFav(post.id!);
+                    }}
+                    title="お気に入り"
+                  >
+                    {favs.includes(post.id!)
+                      ? <FaHeart className="text-red-500 text-lg drop-shadow" />
+                      : <FaRegHeart className="text-gray-400 text-lg" />}
+                  </button>
+                  <button
+                    className="btn-card-action"
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleShare(post);
+                    }}
+                    title="シェア"
+                  >
+                    <FaShareAlt className="text-blue-600 text-lg" />
+                  </button>
+                </div>
               </div>
-              {/* 日付バッジ */}
-              <div className="absolute top-4 left-4 flex items-center gap-1 bg-[#fff9] rounded-full px-3 py-1 shadow text-[#192349] font-bold text-xs">
-                <FaCalendarAlt className="text-blue-700 mr-1" /> {formatDate(post.date)}
-              </div>
-              {/* カード右上：お気に入り＆シェアボタン */}
-              <div className="absolute top-4 right-4 flex gap-3 z-10">
-                <button
-                  className="btn-card-action"
-                  onClick={e => {
-                    e.stopPropagation();
-                    toggleFav(post.id!);
-                  }}
-                  title="お気に入り"
-                >
-                  {favs.includes(post.id!)
-                    ? <FaHeart className="text-red-500 text-lg drop-shadow" />
-                    : <FaRegHeart className="text-gray-400 text-lg" />}
-                </button>
-                <button
-                  className="btn-card-action"
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleShare(post);
-                  }}
-                  title="シェア"
-                >
-                  <FaShareAlt className="text-blue-600 text-lg" />
-                </button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </section>
-      {/* --- rippleエフェクトCSS＆アニメCSS --- */}
       <style jsx global>{`
         .ripple-effect:active .ripple {
           animation: ripple 0.5s linear;
