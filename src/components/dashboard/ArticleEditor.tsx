@@ -7,6 +7,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -61,10 +62,10 @@ export default function ArticleEditor({
   );
 
   // 並び替えイベント
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (active?.id && over?.id && active.id !== over.id) {
-      onSortBlocks(active.id, over.id);
+      onSortBlocks(String(active.id), String(over.id));
     }
   };
 

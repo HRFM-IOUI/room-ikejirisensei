@@ -11,8 +11,6 @@ import {
   doc,
   serverTimestamp,
   deleteDoc,
-  setDoc,
-  getDoc,
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";

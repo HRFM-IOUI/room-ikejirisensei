@@ -90,7 +90,9 @@ export default function Dashboard() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [fullscreenEdit, setFullscreenEdit] = useState(false);
-  const [fullscreenEditBlockId, setFullscreenEditBlockId] = useState<string | null>(null);
+  // ↓↓↓ ここ削除済み ↓↓↓
+  // const [fullscreenEditBlockId, setFullscreenEditBlockId] = useState<string | null>(null);
+  // ↑↑↑
   const [fullscreenLanguage, setFullscreenLanguage] = useState<"ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar">("ja");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -112,7 +114,6 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-  
   // 記事リストを取得
   useEffect(() => {
     if (activeTab === "edit") {
@@ -272,7 +273,7 @@ export default function Dashboard() {
 
   // フルスクリーン原稿用紙編集（多言語対応）
   const handleFullscreenEdit = (blockId: string, language: typeof fullscreenLanguage) => {
-    setFullscreenEditBlockId(blockId);
+    // setFullscreenEditBlockId(blockId); ← これも不要
     setFullscreenLanguage(language);
     setFullscreenEdit(true);
   };
@@ -729,4 +730,3 @@ export default function Dashboard() {
     </div>
   );
 }
-
