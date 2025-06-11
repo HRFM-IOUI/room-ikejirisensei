@@ -21,15 +21,14 @@ type Room = {
   createdAt: any;
 };
 
-export default function RoomList({
-  activeRoomId,
-  setActiveRoomId
-}: {
+type RoomListProps = {
   activeRoomId: string | null;
   setActiveRoomId: (id: string) => void;
-}) {
+};
+
+export default function RoomList({ activeRoomId, setActiveRoomId }: RoomListProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [unreadCounts, setUnreadCounts] = useState<{ [roomId: string]: number }>({});
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [user] = useAuthState(auth);
 
   // rooms取得
@@ -38,8 +37,8 @@ export default function RoomList({
     const unsub = onSnapshot(q, (snapshot) => {
       setRooms(snapshot.docs.map(doc => ({
         id: doc.id,
-        ...doc.data(),
-      })) as Room[]);
+        ...(doc.data() as Omit<Room, "id">),
+      })));
     });
     return () => unsub();
   }, []);
@@ -47,8 +46,9 @@ export default function RoomList({
   // 各ルーム未読数リアルタイム取得
   useEffect(() => {
     if (!user) return;
-    const unsubs = rooms.map(room => {
-      return onSnapshot(
+    // ルームが変わるたび古い監視をクリーンアップ
+    const unsubs = rooms.map(room =>
+      onSnapshot(
         collection(db, "rooms", room.id, "messages"),
         snap => {
           let count = 0;
@@ -56,15 +56,15 @@ export default function RoomList({
             const msg = docSnap.data();
             if (
               msg.userId !== user.uid &&
-              (!msg.readBy || !msg.readBy.includes(user.uid))
+              (!Array.isArray(msg.readBy) || !msg.readBy.includes(user.uid))
             ) {
               count += 1;
             }
           });
           setUnreadCounts(prev => ({ ...prev, [room.id]: count }));
         }
-      );
-    });
+      )
+    );
     return () => unsubs.forEach(fn => fn());
   }, [rooms, user]);
 
@@ -74,10 +74,10 @@ export default function RoomList({
       alert("部屋は最大12個までです。");
       return;
     }
-    const name = prompt("新しい部屋の名前を入力してください");
+    const name = window.prompt("新しい部屋の名前を入力してください");
     if (name && name.trim()) {
       await addDoc(collection(db, "rooms"), {
-        name,
+        name: name.trim(),
         userCount: 0,
         onlineCount: 0,
         createdAt: serverTimestamp()
@@ -85,11 +85,18 @@ export default function RoomList({
     }
   }
 
-  // レスポンシブstyle例（PC/スマホ両対応、最低限）
-  const wrapStyle: React.CSSProperties =
-    window?.innerWidth && window.innerWidth <= 600
-      ? { display: "block", padding: "0 6px", margin: "16px 0" }
-      : { display: "flex", gap: 18, flexWrap: "wrap", margin: "18px 0 0 0", padding: "0 32px" };
+  // レスポンシブstyle（SSR対応・安全）
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const update = () => setIsMobile(typeof window !== "undefined" && window.innerWidth <= 600);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const wrapStyle: React.CSSProperties = isMobile
+    ? { display: "block", padding: "0 6px", margin: "16px 0" }
+    : { display: "flex", gap: 18, flexWrap: "wrap", margin: "18px 0 0 0", padding: "0 32px" };
 
   return (
     <div style={wrapStyle}>

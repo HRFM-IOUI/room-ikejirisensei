@@ -1,10 +1,24 @@
-// src/app/posts/[id]/page.tsx
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { Post } from "@/types/post";
+import Image from "next/image";
+
+// ブロック型定義
+type Block =
+  | { type: "heading"; content: string }
+  | { type: "text"; content: string }
+  | { type: "image"; content: string }
+  | { type: "video"; content: string };
+
+type PostData = {
+  id: string;
+  title: string;
+  createdAt: string | number | { seconds?: number };
+  blocks?: Block[];
+};
 
 // createdAtフォーマット
 function formatDate(val: string | number | { seconds?: number }) {
@@ -29,7 +43,7 @@ function formatDate(val: string | number | { seconds?: number }) {
 export default function PostDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [post, setPost] = useState<any | null>(null); // ← any型でblocks考慮
+  const [post, setPost] = useState<PostData | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -37,7 +51,14 @@ export default function PostDetailPage() {
       const docRef = doc(db, "posts", id as string);
       const snap = await getDoc(docRef);
       if (snap.exists()) {
-        setPost({ id: snap.id, ...snap.data() });
+        // blocksが不明な場合は空配列
+        const data = snap.data() as Omit<PostData, "id">;
+        setPost({
+          id: snap.id,
+          title: data.title,
+          createdAt: data.createdAt,
+          blocks: Array.isArray(data.blocks) ? data.blocks : [],
+        });
       }
     };
     fetchPost();
@@ -49,7 +70,9 @@ export default function PostDetailPage() {
     );
 
   // 画像サムネイル（最初のimageブロックを優先）
-  const firstImage = post.blocks?.find?.((b: any) => b.type === "image" && b.content);
+  const firstImage = post.blocks?.find?.(
+    (b) => b.type === "image" && !!b.content
+  ) as Block | undefined;
 
   return (
     <div
@@ -78,8 +101,7 @@ export default function PostDetailPage() {
       </button>
       <div>
         {firstImage && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={firstImage.content}
             alt={post.title}
             width={650}
@@ -91,6 +113,7 @@ export default function PostDetailPage() {
               borderRadius: 12,
               marginBottom: 18,
             }}
+            priority
           />
         )}
         <h1
@@ -121,16 +144,31 @@ export default function PostDetailPage() {
           }}
         >
           {/* blocks配列をレンダリング */}
-          {post.blocks?.map?.((block: any, idx: number) => {
-            if (block.type === "heading") return <h2 key={idx}>{block.content}</h2>;
-            if (block.type === "text") return <p key={idx}>{block.content}</p>;
-            if (block.type === "image") return (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={idx} src={block.content} alt="" style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }} />
-            );
-            if (block.type === "video") return (
-              <video key={idx} src={block.content} controls style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }} />
-            );
+          {post.blocks?.map?.((block, idx) => {
+            if (block.type === "heading")
+              return <h2 key={idx}>{block.content}</h2>;
+            if (block.type === "text")
+              return <p key={idx}>{block.content}</p>;
+            if (block.type === "image")
+              return (
+                <Image
+                  key={idx}
+                  src={block.content}
+                  alt=""
+                  width={650}
+                  height={310}
+                  style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }}
+                />
+              );
+            if (block.type === "video")
+              return (
+                <video
+                  key={idx}
+                  src={block.content}
+                  controls
+                  style={{ maxWidth: 650, borderRadius: 10, margin: "16px 0" }}
+                />
+              );
             return null;
           })}
         </div>

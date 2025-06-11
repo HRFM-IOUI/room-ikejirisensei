@@ -1,6 +1,5 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import styles from "./Dashboard.module.css";
 import { getUserCountsByDate } from "@/utils/analytics";
 
 // 多言語ラベル
@@ -103,7 +102,6 @@ export default function AnalyticsUserCount() {
 
   return (
     <section
-      className={styles.analyticsUserCountSection}
       aria-label={L.title}
       style={{
         background: "#fff",
@@ -194,7 +192,7 @@ export default function AnalyticsUserCount() {
                 minWidth: 240,
               }}
             >
-              {stats.map((s, i) => (
+              {stats.map((s) => (
                 <div
                   key={s.date}
                   aria-label={`${s.date}: ${s.count} ${L.users}`}

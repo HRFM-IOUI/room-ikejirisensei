@@ -1,10 +1,12 @@
+"use client";
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, DocumentData } from "firebase/firestore";
 import { db } from "@/firebase";
 import type { Post } from "../types/post";
 import Image from "next/image";
 import Link from "next/link";
 
+// サムネイル未設定時のデフォルト画像
 const DEFAULT_IMAGE = "/logo.svg";
 
 // 日付フォーマット
@@ -27,8 +29,17 @@ function formatDate(dateVal: string | number | { seconds?: number }) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+// 型定義：Post（blocks配列のみany対応。型厳密化したい場合はご相談を！）
+type SimplePost = {
+  id: string;
+  title: string;
+  createdAt: any;
+  blocks?: any[];
+  image?: string;
+};
+
 export default function HeroSection() {
-  const [posts, setPosts] = useState<any[]>([]); // blocks対応のためany型
+  const [posts, setPosts] = useState<SimplePost[]>([]);
 
   useEffect(() => {
     (async () => {
@@ -38,8 +49,12 @@ export default function HeroSection() {
         limit(5)
       );
       const snapshot = await getDocs(postsQuery);
-      const fetchedPosts = snapshot.docs.map(
-        doc => ({ id: doc.id, ...doc.data() })
+      const fetchedPosts: SimplePost[] = snapshot.docs.map(
+        doc =>
+          ({
+            id: doc.id,
+            ...(doc.data() as DocumentData),
+          } as SimplePost)
       );
       setPosts(fetchedPosts);
     })();
@@ -68,7 +83,9 @@ export default function HeroSection() {
         <ul className="flex flex-col gap-4 sm:gap-6">
           {posts.map((p, idx) => {
             // blocks配列から最初のimageブロックを取得
-            const firstImage = p.blocks?.find?.((b: any) => b.type === "image" && b.content);
+            const firstImage = p.blocks?.find?.(
+              (b: any) => b.type === "image" && b.content
+            );
 
             return (
               <li

@@ -63,18 +63,20 @@ export default function ArticleEditList() {
 
   useEffect(() => { fetchPosts(); }, [fetchPosts]);
 
+  // 全タグ抽出
   const allTags = useMemo(
     () => Array.from(new Set(posts.flatMap(post => post.tags ?? []))).filter(Boolean),
     [posts]
   );
 
+  // フィルタリング
   const filteredPosts = useMemo(() => {
     let filtered = posts;
     if (filterTag) filtered = filtered.filter(post => post.tags?.includes(filterTag));
     if (searchText.trim()) {
       const lower = searchText.trim().toLowerCase();
       filtered = filtered.filter(post =>
-        post.blocks?.some(b => b.content?.toLowerCase().includes(lower))
+        post.blocks?.some(b => typeof b.content === "string" && b.content.toLowerCase().includes(lower))
       );
     }
     return filtered;
@@ -125,7 +127,7 @@ export default function ArticleEditList() {
       await Promise.all(selectedIds.map(id => deleteDoc(doc(db, "posts", id))));
       toast.success("選択した記事を削除しました。");
       await fetchPosts();
-      setSelectedIds([]); // 選択もリセット
+      setSelectedIds([]);
     } catch (e) {
       toast.error("一括削除エラー: " + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -133,6 +135,7 @@ export default function ArticleEditList() {
     }
   };
 
+  // ステータス切り替え
   const handleToggleStatus = async (post: Post) => {
     const newStatus = post.status === "published" ? "draft" : "published";
     try {
@@ -144,6 +147,7 @@ export default function ArticleEditList() {
     }
   };
 
+  // 複製
   const handleDuplicate = async (post: Post) => {
     try {
       await addDoc(collection(db, "posts"), {

@@ -16,6 +16,13 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// Firestore Timestamp型の互換定義
+type FirestoreTimestamp = {
+  seconds: number;
+  nanoseconds: number;
+  toDate: () => Date;
+};
+
 type Message = {
   id: string;
   userId: string;
@@ -24,8 +31,8 @@ type Message = {
   imageUrl?: string;
   videoUrl?: string;
   type?: "text" | "image" | "video";
-  createdAt: any;
-  editedAt?: any;
+  createdAt: FirestoreTimestamp | null;
+  editedAt?: FirestoreTimestamp | null;
   replyTo?: string;
   mentions?: string[];
   readBy?: string[];
@@ -125,8 +132,8 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
         mentions: [],
         readBy: [user.uid],
       });
-    } catch (err: any) {
-      alert(err.message || "メディア送信失敗");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "メディア送信失敗");
     }
     setSending(false);
     e.target.value = "";
@@ -207,12 +214,11 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
   function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend(e as any);
+      handleSend(e as unknown as React.FormEvent);
     }
   }
 
   const currentUserId = user?.uid;
-
   // ブロック対象のメッセージは非表示
   const visibleMessages = messages.filter(msg =>
     !blockedUsers.includes(msg.userId) || msg.userId === currentUserId
@@ -415,7 +421,7 @@ export default function ChatRoom({ roomId }: { roomId: string }) {
                 fontWeight: 500,
               }}
             >
-              {msg.createdAt && msg.createdAt.toDate
+              {msg.createdAt && typeof msg.createdAt.toDate === "function"
                 ? msg.createdAt.toDate().toLocaleTimeString().slice(0, 5)
                 : "--:--"}
             </span>

@@ -5,10 +5,17 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "@/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+type UserProfile = {
+  name: string;
+  bio: string;
+  icon?: string;
+};
 
 export default function ProfilePage() {
   const [user] = useAuthState(auth);
-  const [profile, setProfile] = useState<any>({
+  const [profile, setProfile] = useState<UserProfile>({
     name: "",
     bio: "",
     icon: "",
@@ -23,9 +30,18 @@ export default function ProfilePage() {
       const ref = doc(db, "users", user.uid);
       const snap = await getDoc(ref);
       if (snap.exists()) {
-        setProfile(snap.data());
+        const data = snap.data();
+        setProfile({
+          name: data.name ?? user.displayName ?? "",
+          bio: data.bio ?? "",
+          icon: data.icon ?? user.photoURL ?? "",
+        });
       } else {
-        setProfile({ name: user.displayName ?? "", bio: "", icon: user.photoURL ?? "" });
+        setProfile({
+          name: user.displayName ?? "",
+          bio: "",
+          icon: user.photoURL ?? "",
+        });
       }
       setLoading(false);
     };
@@ -43,7 +59,14 @@ export default function ProfilePage() {
   }
   if (loading) {
     return (
-      <div style={{ padding: 44, textAlign: "center", color: "#888", fontSize: 16 }}>
+      <div
+        style={{
+          padding: 44,
+          textAlign: "center",
+          color: "#888",
+          fontSize: 16,
+        }}
+      >
         読み込み中...
       </div>
     );
@@ -60,13 +83,20 @@ export default function ProfilePage() {
         padding: 32,
       }}
     >
-      <h2 style={{ fontWeight: 900, fontSize: 22, marginBottom: 18, color: "#2294cb" }}>
+      <h2
+        style={{
+          fontWeight: 900,
+          fontSize: 22,
+          marginBottom: 18,
+          color: "#2294cb",
+        }}
+      >
         マイプロフィール
       </h2>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 18 }}>
         <div style={{ position: "relative" }}>
           {profile.icon ? (
-            <img
+            <Image
               src={profile.icon}
               alt="icon"
               width={68}
@@ -76,10 +106,11 @@ export default function ProfilePage() {
                 border: "2px solid #cce6fc",
                 objectFit: "cover",
                 boxShadow: "0 1px 7px #bde5ff33",
-                cursor: "pointer"
+                cursor: "pointer",
               }}
               onClick={() => router.push("/profile/edit")}
               title="画像変更はこちら"
+              unoptimized
             />
           ) : (
             <div
@@ -95,12 +126,12 @@ export default function ProfilePage() {
                 color: "#96a8be",
                 fontSize: 28,
                 marginRight: 14,
-                cursor: "pointer"
+                cursor: "pointer",
               }}
               onClick={() => router.push("/profile/edit")}
               title="画像変更はこちら"
             >
-              {profile.name?.slice(0, 1)?.toUpperCase() ?? "?"}
+              {profile.name?.slice(0, 1)?.toUpperCase() || "?"}
             </div>
           )}
         </div>
@@ -112,7 +143,9 @@ export default function ProfilePage() {
         </div>
       </div>
       <div style={{ fontSize: 16, marginBottom: 10, color: "#444" }}>
-        {profile.bio || <span style={{ color: "#bbb" }}>（自己紹介が未入力です）</span>}
+        {profile.bio || (
+          <span style={{ color: "#bbb" }}>（自己紹介が未入力です）</span>
+        )}
       </div>
       <button
         onClick={() => router.push("/profile/edit")}
@@ -127,6 +160,7 @@ export default function ProfilePage() {
           cursor: "pointer",
           marginTop: 6,
         }}
+        type="button"
       >
         プロフィール編集・ブロック管理はこちら
       </button>

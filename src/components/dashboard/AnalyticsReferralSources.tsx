@@ -1,7 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { getReferralStats } from "@/utils/analytics";
-import styles from "./Dashboard.module.css";
 
 // 多言語ラベル
 const LABELS: Record<string, Record<string, string>> = {
@@ -42,9 +41,9 @@ const LABELS: Record<string, Record<string, string>> = {
   },
 };
 
-const getLang = () => {
+const getLang = (): keyof typeof LABELS => {
   if (typeof window !== "undefined") {
-    return (navigator.language?.slice(0, 2) || "ja") as keyof typeof LABELS;
+    return (navigator.language?.slice(0, 2) as keyof typeof LABELS) || "ja";
   }
   return "ja";
 };

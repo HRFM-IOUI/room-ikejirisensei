@@ -12,14 +12,29 @@ import {
   getDoc,
 } from "firebase/firestore";
 import toast from "react-hot-toast";
+import Image from "next/image";
+
+// 型定義（最小限）
+type UserData = {
+  id: string;
+  name?: string;
+  icon?: string;
+};
+
+type FriendRequest = {
+  id: string;
+  from: string;
+  name: string;
+  icon?: string;
+};
 
 export default function FriendsPage() {
   const [user] = useAuthState(auth);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [requests, setRequests] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
-  const [foundUser, setFoundUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [friends, setFriends] = useState<UserData[]>([]);
+  const [requests, setRequests] = useState<FriendRequest[]>([]);
+  const [search, setSearch] = useState<string>("");
+  const [foundUser, setFoundUser] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   // 自分のフレンド一覧・申請一覧
   useEffect(() => {
@@ -27,12 +42,14 @@ export default function FriendsPage() {
     const fetch = async () => {
       // フレンド一覧
       const snap = await getDocs(collection(db, "users", user.uid, "friends"));
-      const ids = snap.docs.map(doc => doc.data().userId);
+      const ids = snap.docs.map(docSnap => docSnap.data().userId as string);
       const userDatas = await Promise.all(
         ids.map(async id => {
           const uref = doc(db, "users", id);
           const usnap = await getDoc(uref);
-          return usnap.exists() ? { ...usnap.data(), id } : { name: id, id };
+          return usnap.exists()
+            ? { ...usnap.data(), id } as UserData
+            : { name: id, id };
         })
       );
       setFriends(userDatas);
@@ -43,14 +60,16 @@ export default function FriendsPage() {
       );
       const reqs = await Promise.all(
         reqSnap.docs.map(async docSnap => {
-          const fromId = docSnap.data().from;
+          const fromId = docSnap.data().from as string;
           const usnap = await getDoc(doc(db, "users", fromId));
           return {
             id: docSnap.id,
             from: fromId,
-            name: usnap.exists() ? usnap.data().name || fromId : fromId,
-            icon: usnap.exists() ? usnap.data().icon : undefined,
-          };
+            name: usnap.exists()
+              ? (usnap.data().name as string) || fromId
+              : fromId,
+            icon: usnap.exists() ? (usnap.data().icon as string | undefined) : undefined,
+          } as FriendRequest;
         })
       );
       setRequests(reqs);
@@ -65,7 +84,7 @@ export default function FriendsPage() {
     setFoundUser(null);
     const usersSnap = await getDocs(collection(db, "users"));
     const match = usersSnap.docs.find(
-      doc => doc.data().name === search.trim()
+      docSnap => docSnap.data().name === search.trim()
     );
     if (match) {
       // 既にフレンドまたは自分なら非表示
@@ -126,7 +145,9 @@ export default function FriendsPage() {
     );
     toast.success("フレンドになりました！");
     // UI即反映
-    setFriends(f => [...f, { id: fromId, name: requests.find(r => r.from === fromId)?.name }]);
+    setFriends(f =>
+      [...f, { id: fromId, name: requests.find(r => r.from === fromId)?.name }]
+    );
     setRequests(r => r.filter(r => r.from !== fromId));
   }
 
@@ -140,7 +161,12 @@ export default function FriendsPage() {
     );
   }
 
-  if (loading) return <div style={{ padding: 44, textAlign: "center", color: "#aaa" }}>読み込み中...</div>;
+  if (loading)
+    return (
+      <div style={{ padding: 44, textAlign: "center", color: "#aaa" }}>
+        読み込み中...
+      </div>
+    );
 
   return (
     <div
@@ -191,7 +217,15 @@ export default function FriendsPage() {
         </button>
         {foundUser && (
           <span style={{ marginLeft: 18, display: "inline-flex", alignItems: "center", gap: 7 }}>
-            {foundUser.icon && <img src={foundUser.icon} alt="icon" width={32} height={32} style={{ borderRadius: "50%" }} />}
+            {foundUser.icon && (
+              <Image
+                src={foundUser.icon}
+                alt="icon"
+                width={32}
+                height={32}
+                style={{ borderRadius: "50%" }}
+              />
+            )}
             <span style={{ fontWeight: 700, color: "#2294cb", fontSize: 15 }}>{foundUser.name}</span>
             <button
               onClick={handleSendRequest}
@@ -216,7 +250,15 @@ export default function FriendsPage() {
           {friends.length === 0 && <li style={{ color: "#bbb" }}>（まだいません）</li>}
           {friends.map(f => (
             <li key={f.id} style={{ display: "flex", alignItems: "center", marginBottom: 7, gap: 7 }}>
-              {f.icon && <img src={f.icon} alt="icon" width={27} height={27} style={{ borderRadius: "50%" }}/> }
+              {f.icon && (
+                <Image
+                  src={f.icon}
+                  alt="icon"
+                  width={27}
+                  height={27}
+                  style={{ borderRadius: "50%" }}
+                />
+              )}
               <span style={{ fontWeight: 700, color: "#2676be", fontSize: 15 }}>{f.name ?? f.id}</span>
               <span style={{ color: "#aaa", fontSize: 12, marginLeft: 4 }}>{f.id}</span>
             </li>
@@ -229,7 +271,15 @@ export default function FriendsPage() {
           {requests.length === 0 && <li style={{ color: "#bbb" }}>（なし）</li>}
           {requests.map(req => (
             <li key={req.id} style={{ display: "flex", alignItems: "center", marginBottom: 7, gap: 7 }}>
-              {req.icon && <img src={req.icon} alt="icon" width={27} height={27} style={{ borderRadius: "50%" }}/> }
+              {req.icon && (
+                <Image
+                  src={req.icon}
+                  alt="icon"
+                  width={27}
+                  height={27}
+                  style={{ borderRadius: "50%" }}
+                />
+              )}
               <span style={{ fontWeight: 700, color: "#2294cb" }}>{req.name}</span>
               <button
                 onClick={() => handleAcceptRequest(req.from)}
@@ -242,7 +292,7 @@ export default function FriendsPage() {
                   fontWeight: 700,
                   border: "none",
                   fontSize: 14,
-                  cursor: "pointer"
+                  cursor: "pointer",
                 }}
               >
                 承認

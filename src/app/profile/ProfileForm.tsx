@@ -1,10 +1,13 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "@/firebase";
 import { doc, getDoc, setDoc, collection, onSnapshot, deleteDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import toast from "react-hot-toast";
+import Image from "next/image";
+
+type BlockedUser = { uid: string; name: string };
 
 export default function ProfileForm() {
   const [user] = useAuthState(auth);
@@ -15,18 +18,19 @@ export default function ProfileForm() {
   const [uploading, setUploading] = useState(false);
 
   // ブロックリスト
-  const [blocked, setBlocked] = useState<{ uid: string, name: string }[]>([]);
+  const [blocked, setBlocked] = useState<BlockedUser[]>([]);
 
   // プロフィール取得
   useEffect(() => {
     if (!user) return;
-    const ref = doc(db, "users", user.uid);
+    const refUser = doc(db, "users", user.uid);
     const fetch = async () => {
-      const snap = await getDoc(ref);
+      const snap = await getDoc(refUser);
       if (snap.exists()) {
-        setName(snap.data().name || "");
-        setBio(snap.data().bio || "");
-        setIcon(snap.data().icon || user.photoURL || "");
+        const data = snap.data();
+        setName(data.name || "");
+        setBio(data.bio || "");
+        setIcon(data.icon || user.photoURL || "");
       } else {
         setName(user.displayName || "");
         setBio("");
@@ -53,16 +57,20 @@ export default function ProfileForm() {
     });
   }, [user]);
 
-  async function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!user) return;
-    const ref = doc(db, "users", user.uid);
-    await setDoc(ref, {
-      name,
-      bio,
-      icon,
-      updatedAt: new Date()
-    }, { merge: true });
+    const refUser = doc(db, "users", user.uid);
+    await setDoc(
+      refUser,
+      {
+        name,
+        bio,
+        icon,
+        updatedAt: new Date(),
+      },
+      { merge: true }
+    );
     toast.success("プロフィールを保存しました！");
   }
 
@@ -85,7 +93,7 @@ export default function ProfileForm() {
       setIcon(url);
       await setDoc(doc(db, "users", user.uid), { icon: url }, { merge: true });
       toast.success("プロフィール画像を変更しました！");
-    } catch (err: any) {
+    } catch {
       toast.error("画像のアップロードに失敗しました");
     }
     setUploading(false);
@@ -102,11 +110,20 @@ export default function ProfileForm() {
   if (loading) return <div>読込中...</div>;
 
   return (
-    <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 410, margin: "0 auto" }}>
+    <form
+      onSubmit={handleSave}
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 20,
+        maxWidth: 410,
+        margin: "0 auto",
+      }}
+    >
       {/* プロフィール画像 */}
       <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <label style={{ cursor: "pointer" }}>
-          <img
+        <label style={{ cursor: uploading ? "not-allowed" : "pointer" }}>
+          <Image
             src={icon || "/default-icon.png"}
             alt="プロフィール画像"
             width={92}
@@ -118,7 +135,8 @@ export default function ProfileForm() {
               boxShadow: "0 2px 12px #b1d8ff38",
               marginBottom: 6,
             }}
-          /><br />
+          />
+          <br />
           <input
             type="file"
             accept="image/*"
@@ -126,11 +144,20 @@ export default function ProfileForm() {
             style={{ display: "none" }}
             disabled={uploading}
           />
-          <span style={{
-            display: "inline-block", marginTop: 2,
-            color: "#2370bc", fontWeight: 700, fontSize: 14,
-            border: "1px solid #bde0fa", borderRadius: 7, padding: "3px 14px", background: "#eaf4ff", cursor: uploading ? "not-allowed" : "pointer"
-          }}>
+          <span
+            style={{
+              display: "inline-block",
+              marginTop: 2,
+              color: "#2370bc",
+              fontWeight: 700,
+              fontSize: 14,
+              border: "1px solid #bde0fa",
+              borderRadius: 7,
+              padding: "3px 14px",
+              background: "#eaf4ff",
+              cursor: uploading ? "not-allowed" : "pointer",
+            }}
+          >
             {uploading ? "アップロード中…" : "画像変更"}
           </span>
         </label>
@@ -146,8 +173,12 @@ export default function ProfileForm() {
           onChange={e => setName(e.target.value)}
           required
           style={{
-            width: "100%", padding: 11, borderRadius: 9,
-            border: "1.3px solid #bde0fa", marginTop: 6, fontSize: 15
+            width: "100%",
+            padding: 11,
+            borderRadius: 9,
+            border: "1.3px solid #bde0fa",
+            marginTop: 6,
+            fontSize: 15,
           }}
         />
       </div>
@@ -161,23 +192,46 @@ export default function ProfileForm() {
           onChange={e => setBio(e.target.value)}
           rows={4}
           style={{
-            width: "100%", padding: 11, borderRadius: 9,
-            border: "1.3px solid #bde0fa", marginTop: 6, fontSize: 15
+            width: "100%",
+            padding: 11,
+            borderRadius: 9,
+            border: "1.3px solid #bde0fa",
+            marginTop: 6,
+            fontSize: 15,
           }}
         />
       </div>
       {/* ブロックリスト */}
       <div style={{ marginTop: 20 }}>
-        <div style={{ fontWeight: 700, color: "#c44", marginBottom: 4, fontSize: 15 }}>
+        <div
+          style={{
+            fontWeight: 700,
+            color: "#c44",
+            marginBottom: 4,
+            fontSize: 15,
+          }}
+        >
           ブロック中のユーザー
         </div>
         {blocked.length === 0 ? (
-          <div style={{ color: "#aaa", fontSize: 14 }}>ブロック中のユーザーはいません。</div>
+          <div style={{ color: "#aaa", fontSize: 14 }}>
+            ブロック中のユーザーはいません。
+          </div>
         ) : (
           <ul style={{ paddingLeft: 12 }}>
             {blocked.map(u => (
-              <li key={u.uid} style={{ marginBottom: 7, display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontWeight: 600, color: "#2566c8" }}>{u.name}</span>
+              <li
+                key={u.uid}
+                style={{
+                  marginBottom: 7,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <span style={{ fontWeight: 600, color: "#2566c8" }}>
+                  {u.name}
+                </span>
                 <button
                   onClick={() => handleUnblock(u.uid)}
                   type="button"
@@ -189,9 +243,11 @@ export default function ProfileForm() {
                     color: "#2690db",
                     fontWeight: 600,
                     fontSize: 13,
-                    cursor: "pointer"
+                    cursor: "pointer",
                   }}
-                >解除</button>
+                >
+                  解除
+                </button>
               </li>
             ))}
           </ul>
@@ -207,7 +263,7 @@ export default function ProfileForm() {
           border: "none",
           borderRadius: 10,
           padding: "12px 0",
-          marginTop: 8
+          marginTop: 8,
         }}
         disabled={uploading}
       >
