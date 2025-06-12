@@ -181,7 +181,7 @@ const GenkouViewer: React.FC<Props> = ({
   const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title } = cfg;
 
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
-  const [currentPage, setCurrentPage] = useState(page);
+  const [currentPage, setCurrentPage] = useState(page);  // ページ状態管理
 
   useEffect(() => {
     const handleResize = () => {
