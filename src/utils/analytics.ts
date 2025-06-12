@@ -62,11 +62,11 @@ export async function getArticleViewRankingWithDetails(limit: number = 10) {
       return {
         ...item,
         title:
-          (postData as Record<string, any>)?.blocks?.[0]?.content?.slice(0, 30) ||
-          (postData as Record<string, any>)?.title ||
+          (postData as { blocks?: { content?: string[] }[] })?.blocks?.[0]?.content?.slice(0, 30) ||
+          (postData as { title?: string })?.title ||
           "無題",
-        tags: (postData as Record<string, any>)?.tags || [],
-        createdAt: (postData as Record<string, any>)?.createdAt?.toDate?.() || null,
+        tags: (postData as { tags?: string[] })?.tags || [],
+        createdAt: (postData as { createdAt?: { toDate?: () => Date } })?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
@@ -143,10 +143,10 @@ export async function getVideoViewRankingWithDetails(limit: number = 10) {
       const videoData = videoSnap.exists() ? videoSnap.data() : {};
       return {
         ...item,
-        title: (videoData as Record<string, any>)?.title || "無題動画",
-        tags: (videoData as Record<string, any>)?.tags || [],
-        thumbnail: (videoData as Record<string, any>)?.thumbnail || null,
-        createdAt: (videoData as Record<string, any>)?.createdAt?.toDate?.() || null,
+        title: (videoData as { title?: string })?.title || "無題動画",
+        tags: (videoData as { tags?: string[] })?.tags || [],
+        thumbnail: (videoData as { thumbnail?: string })?.thumbnail || null,
+        createdAt: (videoData as { createdAt?: { toDate?: () => Date } })?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
