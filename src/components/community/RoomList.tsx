@@ -8,7 +8,9 @@ import {
   onSnapshot,
   addDoc,
   serverTimestamp,
-  limit
+  limit,
+  QueryDocumentSnapshot,
+  DocumentData,
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";
@@ -18,12 +20,17 @@ type Room = {
   name: string;
   userCount: number;
   onlineCount: number;
-  createdAt: any;
+  createdAt: { seconds: number } | null;
 };
 
 type RoomListProps = {
   activeRoomId: string | null;
   setActiveRoomId: (id: string) => void;
+};
+
+type MessageDoc = {
+  userId: string;
+  readBy?: string[];
 };
 
 export default function RoomList({ activeRoomId, setActiveRoomId }: RoomListProps) {
@@ -35,7 +42,7 @@ export default function RoomList({ activeRoomId, setActiveRoomId }: RoomListProp
   useEffect(() => {
     const q = query(collection(db, "rooms"), orderBy("createdAt", "asc"), limit(12));
     const unsub = onSnapshot(q, (snapshot) => {
-      setRooms(snapshot.docs.map(doc => ({
+      setRooms(snapshot.docs.map((doc: QueryDocumentSnapshot<DocumentData>) => ({
         id: doc.id,
         ...(doc.data() as Omit<Room, "id">),
       })));
@@ -46,14 +53,13 @@ export default function RoomList({ activeRoomId, setActiveRoomId }: RoomListProp
   // 各ルーム未読数リアルタイム取得
   useEffect(() => {
     if (!user) return;
-    // ルームが変わるたび古い監視をクリーンアップ
     const unsubs = rooms.map(room =>
       onSnapshot(
         collection(db, "rooms", room.id, "messages"),
         snap => {
           let count = 0;
           snap.forEach(docSnap => {
-            const msg = docSnap.data();
+            const msg = docSnap.data() as MessageDoc;
             if (
               msg.userId !== user.uid &&
               (!Array.isArray(msg.readBy) || !msg.readBy.includes(user.uid))

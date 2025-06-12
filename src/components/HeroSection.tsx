@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { collection, query, orderBy, limit, getDocs, DocumentData } from "firebase/firestore";
+import { collection, query, orderBy, limit, getDocs, DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
 import { db } from "@/firebase";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +15,7 @@ type Block = {
 const DEFAULT_IMAGE = "/logo.svg";
 
 // 日付フォーマット
-function formatDate(dateVal: string | number | { seconds?: number }) {
+function formatDate(dateVal: string | number | { seconds?: number }): string {
   if (!dateVal) return "";
   let d: Date;
   if (
@@ -55,19 +55,39 @@ export default function HeroSection() {
       );
       const snapshot = await getDocs(postsQuery);
       const fetchedPosts: SimplePost[] = snapshot.docs.map(
-        doc => {
-          const data = doc.data() as DocumentData;
+        (doc: QueryDocumentSnapshot<DocumentData>) => {
+          const data = doc.data();
           return {
             id: doc.id,
             title: data.title ?? "",
             createdAt: data.createdAt ?? "",
             blocks: Array.isArray(data.blocks)
-              ? data.blocks.map((b: any) => ({
-                  type: b.type,
-                  content: b.content,
-                }))
+              ? data.blocks.map((b: unknown) => {
+                  if (
+                    typeof b === "object" &&
+                    b !== null &&
+                    "type" in b &&
+                    "content" in b
+                  ) {
+                    const typedBlock = b as { type: string; content: string };
+                    // typeガード：想定外は除外
+                    if (
+                      ["heading", "text", "image", "video"].includes(
+                        typedBlock.type
+                      ) &&
+                      typeof typedBlock.content === "string"
+                    ) {
+                      return {
+                        type: typedBlock.type as Block["type"],
+                        content: typedBlock.content,
+                      };
+                    }
+                  }
+                  // fallback
+                  return { type: "text", content: "" };
+                })
               : [],
-            image: data.image ?? undefined,
+            image: typeof data.image === "string" ? data.image : undefined,
           };
         }
       );

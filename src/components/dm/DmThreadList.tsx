@@ -16,11 +16,12 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";
 import Image from "next/image";
 
+// 型定義
 type DmThread = {
   id: string;
   participants: string[];
   lastMessage?: string;
-  lastTimestamp?: Date | { toDate(): Date } | string | number;
+  lastTimestamp?: Date; // Date型に正規化
 };
 
 type User = {
@@ -39,17 +40,16 @@ export default function DmThreadList({
   const [user] = useAuthState(auth);
   const currentUser = user?.uid ?? "";
   const [threads, setThreads] = useState<DmThread[]>([]);
-  const [users, setUsers] = useState<{ [uid: string]: User }>({});
+  const [users, setUsers] = useState<Record<string, User>>({});
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
-  const [unreadCounts, setUnreadCounts] = useState<{ [threadId: string]: number }>({});
-
-  // DM作成用（X風検索・選択ステート）
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  // DM作成用
   const [searchName, setSearchName] = useState("");
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [creating, setCreating] = useState(false);
 
-  // 1. DMスレッド一覧リアルタイム取得
+  // 1. スレッド一覧
   useEffect(() => {
     if (!currentUser) return;
     const q = query(
@@ -57,52 +57,62 @@ export default function DmThreadList({
       where("participants", "array-contains", currentUser),
       orderBy("lastTimestamp", "desc")
     );
-    const unsub = onSnapshot(q, (snap) => {
+    return onSnapshot(q, snap => {
       setThreads(
-        snap.docs.map((doc) => ({
-          ...(doc.data() as DmThread),
-          id: doc.id,
-        }))
+        snap.docs.map(doc => {
+          const d = doc.data();
+          let lastTimestamp: Date | undefined;
+          if (d.lastTimestamp?.toDate) lastTimestamp = d.lastTimestamp.toDate();
+          else if (typeof d.lastTimestamp === "string" || typeof d.lastTimestamp === "number")
+            lastTimestamp = new Date(d.lastTimestamp);
+          return {
+            ...(d as Omit<DmThread, "id" | "lastTimestamp">),
+            id: doc.id,
+            lastTimestamp,
+          };
+        })
       );
     });
-    return () => unsub();
   }, [currentUser]);
 
-  // 2. ユーザー一覧取得（DM相手用、threadsから自分以外のUIDだけ全取得）
+  // 2. DM相手ユーザー情報を取得
   useEffect(() => {
     if (!threads.length) return;
-    const uids = Array.from(
-      new Set(threads.flatMap(t => t.participants.filter(uid => uid !== currentUser)))
-    );
+    const uids = Array.from(new Set(
+      threads.flatMap(t => t.participants.filter(uid => uid !== currentUser))
+    ));
     if (!uids.length) return;
     Promise.all(
       uids.map(uid => getDocs(query(collection(db, "users"), where("uid", "==", uid))))
-    ).then((snapshots) => {
-      const result: { [uid: string]: User } = {};
-      snapshots.forEach((snap) => {
+    ).then(snapshots => {
+      const result: Record<string, User> = {};
+      snapshots.forEach(snap => {
         snap.forEach(docSnap => {
           const data = docSnap.data();
-          result[data.uid] = { uid: data.uid, name: data.name || data.uid, photoURL: data.photoURL };
+          result[data.uid] = {
+            uid: data.uid,
+            name: data.name || data.uid,
+            photoURL: data.photoURL,
+          };
         });
       });
       setUsers(u => ({ ...u, ...result }));
     });
   }, [threads, currentUser]);
 
-  // 3. ブロック済みユーザー取得
+  // 3. ブロックユーザー取得
   useEffect(() => {
     if (!currentUser) return;
-    const blocksCol = collection(db, "users", currentUser, "blocks");
-    return onSnapshot(blocksCol, snap => {
+    return onSnapshot(collection(db, "users", currentUser, "blocks"), snap => {
       setBlockedUsers(snap.docs.map(d => d.id));
     });
   }, [currentUser]);
 
-  // 4. スレッドごとの未読数取得
+  // 4. 未読数取得
   useEffect(() => {
     if (!currentUser || !threads.length) return;
-    const unsubs = threads.map(thread => {
-      return onSnapshot(
+    const unsubs = threads.map(thread =>
+      onSnapshot(
         collection(db, "dmThreads", thread.id, "messages"),
         snap => {
           let count = 0;
@@ -117,12 +127,14 @@ export default function DmThreadList({
           });
           setUnreadCounts(prev => ({ ...prev, [thread.id]: count }));
         }
-      );
-    });
-    return () => unsubs.forEach(fn => fn());
+      )
+    );
+    return () => {
+      unsubs.forEach(fn => fn());
+    };
   }, [threads, currentUser]);
 
-  // ユーザー名から検索（部分一致、最大20件）
+  // 検索（ユーザー名部分一致、20件まで）
   async function handleUserSearch() {
     if (!searchName.trim() || searchName.trim().length < 2) {
       setSearchResults([]);
@@ -136,7 +148,7 @@ export default function DmThreadList({
         u.name &&
         u.name.includes(searchName.trim())
       )
-      .slice(0, 20); // 最大20件
+      .slice(0, 20);
     setSearchResults(results);
   }
 
@@ -183,12 +195,26 @@ export default function DmThreadList({
   // 未読合計
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
 
-  // スレッドフィルタリング（ブロック済みは非表示）
+  // スレッドフィルタ（ブロック済み非表示）
   const filteredThreads = threads.filter(
     thread =>
       thread.participants.some(uid => uid !== currentUser && !blockedUsers.includes(uid))
   );
 
+  // 日付表示関数
+  function renderDate(ts?: Date) {
+    if (!ts) return "";
+    const now = new Date();
+    if (
+      ts.getFullYear() === now.getFullYear() &&
+      ts.getMonth() === now.getMonth() &&
+      ts.getDate() === now.getDate()
+    )
+      return ts.toLocaleTimeString().slice(0, 5);
+    return ts.toLocaleDateString();
+  }
+
+  // ---- UI ----
   return (
     <aside
       style={{
@@ -234,7 +260,7 @@ export default function DmThreadList({
         )}
       </div>
 
-      {/* 新規DM作成 X風UI */}
+      {/* 新規DM作成 */}
       <div style={{ marginBottom: 16, width: "94%" }}>
         <input
           type="text"
@@ -298,6 +324,8 @@ export default function DmThreadList({
                     border: "1px solid #e1e6ee",
                     marginRight: 7,
                   }}
+                  unoptimized
+                  sizes="26px"
                 />
               ) : (
                 <div style={{
@@ -393,6 +421,8 @@ export default function DmThreadList({
                     borderRadius: "50%",
                     border: "1.5px solid #e1e6ee",
                   }}
+                  unoptimized
+                  sizes="36px"
                 />
               ) : (
                 <div style={{
@@ -406,6 +436,9 @@ export default function DmThreadList({
               <span>{otherUser?.name || otherUid}</span>
               <span style={{ fontSize: 12, color: "#78a3c1", marginLeft: 7, flex: 1 }}>
                 {thread.lastMessage?.slice(0, 16)}
+              </span>
+              <span style={{ color: "#888", fontSize: 11 }}>
+                {renderDate(thread.lastTimestamp)}
               </span>
               {/* 未読数バッジ */}
               {unreadCounts[thread.id] > 0 && (

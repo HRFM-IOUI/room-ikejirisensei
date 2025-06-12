@@ -71,7 +71,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
     );
     const unsub = onSnapshot(q, (snapshot) => {
       const ms: Message[] = snapshot.docs.map((doc) => {
-        const data = doc.data();
+        const data = doc.data() as Omit<Message, "id">;
         return {
           id: doc.id,
           userId: data.userId ?? "",
@@ -83,8 +83,8 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
           createdAt: data.createdAt ?? null,
           editedAt: data.editedAt,
           replyTo: data.replyTo,
-          mentions: data.mentions ?? [],
-          readBy: data.readBy ?? [],
+          mentions: Array.isArray(data.mentions) ? data.mentions : [],
+          readBy: Array.isArray(data.readBy) ? data.readBy : [],
         };
       });
       setMessages(ms);
@@ -159,7 +159,7 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   }
 
   // メッセージ送信
-  async function handleSend(e: React.FormEvent) {
+  async function handleSend(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!input.trim() || !user) return;
     const mentionMatches = input.match(/@[\w\-]{2,}/g);
@@ -187,11 +187,11 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   }
 
   // メッセージ編集
-  async function handleEdit(msg: Message) {
+  function handleEdit(msg: Message) {
     setEditingMsgId(msg.id);
     setEditingText(msg.text);
   }
-  async function handleEditSubmit(e: React.FormEvent, msg: Message) {
+  async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>, msg: Message) {
     e.preventDefault();
     if (!editingText.trim()) return;
     await updateDoc(doc(db, "rooms", roomId, "messages", msg.id), {
@@ -229,10 +229,13 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
   }
 
   // Enter送信/Shift+Enter改行
-  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend(e as unknown as React.FormEvent);
+      // 型ガード
+      if (e.target && (e.target as HTMLInputElement).form) {
+        ((e.target as HTMLInputElement).form as HTMLFormElement).dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }
     }
   }
 
@@ -338,7 +341,6 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               <>
                 {/* メディア */}
                 {msg.type === "image" && msg.imageUrl && (
-                  // Next.jsの最適化は用途・環境に応じて
                   <img src={msg.imageUrl} alt="画像" style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0" }} />
                 )}
                 {msg.type === "video" && msg.videoUrl && (

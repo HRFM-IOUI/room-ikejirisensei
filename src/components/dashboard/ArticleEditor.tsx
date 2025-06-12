@@ -196,6 +196,8 @@ export default function ArticleEditor({
             marginTop: 2, alignSelf: "flex-start"
           }}
             onClick={() => setAutoTitleActive(false)}
+            role="button"
+            tabIndex={0}
           >
             タイトルは本文から自動生成中 / クリックで手入力モード
           </span>
@@ -206,9 +208,9 @@ export default function ArticleEditor({
         display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 6
       }}>
         <span style={{ fontWeight: 700, color: "#192349", marginRight: 5 }}>タグ:</span>
-        {tags.map(tag => (
+        {tags.map((tag, i) => (
           <span
-            key={tag}
+            key={`${tag}_${i}`}
             style={{
               background: "#e3e8fc",
               color: "#192349",
@@ -318,12 +320,14 @@ export default function ArticleEditor({
           <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
             {blocks.map((block, idx) => (
               <SortableBlock
-                key={block.id}
+                key={`${block.id}_${idx}`}
                 block={block}
                 index={idx}
                 onSelect={() => onBlockSelect?.(block.id)}
-                onFullscreenEdit={(blockId: string) =>
-                  onFullscreenEdit?.(blockId, blockLanguage)
+                onFullscreenEdit={
+                  onFullscreenEdit
+                    ? (blockId: string) => onFullscreenEdit(blockId, blockLanguage)
+                    : undefined
                 }
                 language={blockLanguage}
                 onChange={onBlockChange}

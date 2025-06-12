@@ -9,7 +9,7 @@ export type Block = {
   id: string;
   type: "heading" | "text" | "image" | "video";
   content: string;
-  // styleなど拡張はここに
+  // style等の拡張はここ
 };
 
 type Props = {
@@ -31,7 +31,7 @@ export default function SortableBlock({
   onFullscreenEdit,
   language = "ja",
 }: Props) {
-  // D&D用のhook
+  // D&Dフック
   const {
     setNodeRef,
     attributes,
@@ -41,86 +41,85 @@ export default function SortableBlock({
     isDragging,
   } = useSortable({ id: block.id });
 
-  // 各ブロックタイプごとの編集UI
+  // ブロックタイプ別UI
   const renderBlockContent = () => {
-    if (block.type === "heading") {
-      return (
-        <input
-          type="text"
-          value={block.content}
-          onChange={e => onChange(block.id, e.target.value)}
-          style={{
-            width: "100%",
-            fontWeight: 800,
-            fontSize: 22,
-            border: "none",
-            outline: "none",
-            background: "none",
-            color: "#18191a",
-            padding: "8px 10px",
-          }}
-          aria-label={`見出しブロック${index + 1}`}
-        />
-      );
+    switch (block.type) {
+      case "heading":
+        return (
+          <input
+            type="text"
+            value={block.content}
+            onChange={e => onChange(block.id, e.target.value)}
+            style={{
+              width: "100%",
+              fontWeight: 800,
+              fontSize: 22,
+              border: "none",
+              outline: "none",
+              background: "none",
+              color: "#18191a",
+              padding: "8px 10px",
+            }}
+            aria-label={`見出しブロック${index + 1}`}
+          />
+        );
+      case "text":
+        return (
+          <textarea
+            value={block.content}
+            onChange={e => onChange(block.id, e.target.value)}
+            style={{
+              width: "100%",
+              fontWeight: 500,
+              fontSize: 17,
+              minHeight: 56,
+              border: "none",
+              outline: "none",
+              background: "none",
+              color: "#18191a",
+              padding: "8px 10px",
+              resize: "vertical",
+            }}
+            aria-label={`テキストブロック${index + 1}`}
+          />
+        );
+      case "image":
+        return block.content ? (
+          <img
+            src={block.content}
+            alt="画像ブロック"
+            style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
+          />
+        ) : (
+          <input
+            type="text"
+            value={block.content}
+            onChange={e => onChange(block.id, e.target.value)}
+            placeholder="画像URLを入力"
+            style={{ width: "100%" }}
+            aria-label="画像URL入力"
+          />
+        );
+      case "video":
+        return block.content ? (
+          <video
+            src={block.content}
+            controls
+            style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
+          />
+        ) : (
+          <input
+            type="text"
+            value={block.content}
+            onChange={e => onChange(block.id, e.target.value)}
+            placeholder="動画URLを入力"
+            style={{ width: "100%" }}
+            aria-label="動画URL入力"
+          />
+        );
+      default:
+        return null;
     }
-    if (block.type === "text") {
-      return (
-        <textarea
-          value={block.content}
-          onChange={e => onChange(block.id, e.target.value)}
-          style={{
-            width: "100%",
-            fontWeight: 500,
-            fontSize: 17,
-            minHeight: 56,
-            border: "none",
-            outline: "none",
-            background: "none",
-            color: "#18191a",
-            padding: "8px 10px",
-            resize: "vertical",
-          }}
-          aria-label={`テキストブロック${index + 1}`}
-        />
-      );
-    }
-    if (block.type === "image") {
-      return block.content ? (
-        <img
-          src={block.content}
-          alt="画像ブロック"
-          style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
-        />
-      ) : (
-        <input
-          type="text"
-          value={block.content}
-          onChange={e => onChange(block.id, e.target.value)}
-          placeholder="画像URLを入力"
-          style={{ width: "100%" }}
-          aria-label="画像URL入力"
-        />
-      );
-    }
-    if (block.type === "video") {
-      return block.content ? (
-        <video
-          src={block.content}
-          controls
-          style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
-        />
-      ) : (
-        <input
-          type="text"
-          value={block.content}
-          onChange={e => onChange(block.id, e.target.value)}
-          placeholder="動画URLを入力"
-          style={{ width: "100%" }}
-          aria-label="動画URL入力"
-        />
-      );
-    }
-    return null;
   };
 
   return (
@@ -142,7 +141,7 @@ export default function SortableBlock({
       }}
       {...attributes}
     >
-      {/* グリップ（D&D）左端 */}
+      {/* D&Dグリップ */}
       <button
         type="button"
         {...listeners}
@@ -150,32 +149,29 @@ export default function SortableBlock({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          cursor: "grab",  // グリップボタン全体に対してgrabカーソルを適用
+          cursor: "grab",
           fontSize: 27,
           color: "#3a5cbe",
-          width: 38,  // 固定の幅で表示
-          height: 38,  // 固定の高さで表示
+          width: 38,
+          height: 38,
           marginRight: 17,
           userSelect: "none",
           borderRadius: 7,
           background: isDragging ? "#e3e8fc" : "#f3f5ff",
           boxShadow: isDragging ? "0 0 0 2px #5b8dee88" : undefined,
           transition: "background 0.15s, box-shadow 0.15s",
-          position: "relative",  // アイコンを中央に配置するためにpositionを追加
         }}
         title="ドラッグで並べ替え"
         aria-label="ドラッグで並べ替え"
         tabIndex={-1}
       >
-        <FaGripVertical style={{ position: "absolute" }} />  {/* アイコンをボタンの中央に配置 */}
+        <FaGripVertical />
       </button>
-
-      {/* 編集領域（中央） */}
+      {/* 編集領域 */}
       <div style={{ flex: 1, minWidth: 0 }} onClick={onSelect}>
         {renderBlockContent()}
       </div>
-
-      {/* 右端：メモ・ゴミ箱 */}
+      {/* 原稿用紙/削除 */}
       <button
         type="button"
         onClick={() => onFullscreenEdit?.(block.id, language)}

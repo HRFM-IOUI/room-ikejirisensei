@@ -40,7 +40,16 @@ import { db } from "@/firebase";
 import { collection, addDoc, getDocs, serverTimestamp, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
-// テーマ定義
+// 型定義
+type SupportedLang = "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
+type Article = {
+  id: string;
+  title: string;
+  blocks: Block[];
+  tags: string[];
+  createdAt?: Date | { toDate(): Date } | null;
+};
+
 const THEMES = [
   {
     key: "gentle",
@@ -64,7 +73,6 @@ const THEMES = [
     tabInactive: "#181c24",
     effect: "matrix",
   },
-  // 他テーマ追加可
 ];
 
 const TABS = [
@@ -78,7 +86,7 @@ const TABS = [
 ];
 
 export default function Dashboard() {
-  const [themeKey, setThemeKey] = useState(THEMES[0].key); // デフォルト gentle
+  const [themeKey, setThemeKey] = useState(THEMES[0].key);
   const currentTheme = THEMES.find(t => t.key === themeKey) || THEMES[0];
   const [selectedColor, setSelectedColor] = useState(currentTheme.accent);
 
@@ -90,15 +98,12 @@ export default function Dashboard() {
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [fullscreenEdit, setFullscreenEdit] = useState(false);
-  // ↓↓↓ ここ削除済み ↓↓↓
-  // const [fullscreenEditBlockId, setFullscreenEditBlockId] = useState<string | null>(null);
-  // ↑↑↑
-  const [fullscreenLanguage, setFullscreenLanguage] = useState<"ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar">("ja");
+  const [fullscreenLanguage, setFullscreenLanguage] = useState<SupportedLang>("ja");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
 
   // 編集用
-  const [articleList, setArticleList] = useState<any[]>([]);
+  const [articleList, setArticleList] = useState<Article[]>([]);
   const [editTitle, setEditTitle] = useState<string>("");
   const [editBlocks, setEditBlocks] = useState<Block[]>([]);
   const [editTags, setEditTags] = useState<string[]>([]);
@@ -119,7 +124,7 @@ export default function Dashboard() {
     if (activeTab === "edit") {
       setLoadingArticles(true);
       getDocs(collection(db, "posts")).then(snapshot => {
-        const list = snapshot.docs.map(doc => ({
+        const list: Article[] = snapshot.docs.map(doc => ({
           id: doc.id,
           title: doc.data().title || (doc.data().blocks?.[0]?.content?.slice(0, 20) || "無題記事"),
           createdAt: doc.data().createdAt,
@@ -140,7 +145,7 @@ export default function Dashboard() {
           setEditDocId(null);
         }
         setLoadingArticles(false);
-        setSelectedIds([]); // 取得時リセット
+        setSelectedIds([]);
       });
     }
   }, [activeTab]);
@@ -178,7 +183,7 @@ export default function Dashboard() {
         )
       );
     } catch (e) {
-      alert("保存エラー: " + (e as Error).message);
+      alert("保存エラー: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -223,7 +228,7 @@ export default function Dashboard() {
       setBlocks([]);
       setTags([]);
     } catch (e) {
-      alert("投稿エラー:" + (e as Error).message);
+      alert("投稿エラー:" + (e instanceof Error ? e.message : String(e)));
     }
   };
   const handleSaveDraft = async (title: string, updatedBlocks: Block[], tags?: string[]) => {
@@ -237,7 +242,7 @@ export default function Dashboard() {
       });
       alert("下書きを保存しました！");
     } catch (e) {
-      alert("保存エラー:" + (e as Error).message);
+      alert("保存エラー:" + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -254,13 +259,8 @@ export default function Dashboard() {
     setActiveTab(TABS[idx].key);
   };
 
-  const handlePreview = () => {
-    setPreviewOpen(true);
-  };
-
-  const handleGoTop = () => {
-    router.push("/");
-  };
+  const handlePreview = () => setPreviewOpen(true);
+  const handleGoTop = () => router.push("/");
 
   // 右パネル表示管理
   useEffect(() => {
@@ -272,8 +272,7 @@ export default function Dashboard() {
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
 
   // フルスクリーン原稿用紙編集（多言語対応）
-  const handleFullscreenEdit = (blockId: string, language: typeof fullscreenLanguage) => {
-    // setFullscreenEditBlockId(blockId); ← これも不要
+  const handleFullscreenEdit = (blockId: string, language: SupportedLang) => {
     setFullscreenLanguage(language);
     setFullscreenEdit(true);
   };
@@ -303,7 +302,7 @@ export default function Dashboard() {
         setEditDocId(null);
       }
     } catch (e) {
-      alert("削除エラー: " + (e as Error).message);
+      alert("削除エラー: " + (e instanceof Error ? e.message : String(e)));
     }
   };
 
@@ -342,11 +341,9 @@ export default function Dashboard() {
         transition: "background 0.5s"
       }}
     >
-      {/* 背景エフェクト */}
       {currentTheme.effect === "matrix" && (
         <MatrixLanguageRain color={selectedColor} />
       )}
-      {/* ヘッダー */}
       <div style={{
         display: "flex",
         alignItems: "center",
@@ -355,7 +352,6 @@ export default function Dashboard() {
         zIndex: 2,
         position: "relative"
       }}>
-        {/* ▼ テーマ選択ドロップダウン */}
         <select
           value={themeKey}
           onChange={handleThemeChange}
@@ -375,12 +371,12 @@ export default function Dashboard() {
             <option key={theme.key} value={theme.key}>{theme.label}</option>
           )}
         </select>
-        {/* ▼ カラーピッカー */}
         <DashboardColorPicker
           color={selectedColor}
           onChange={setSelectedColor}
         />
         <button
+          type="button"
           onClick={handleGoTop}
           style={{
             marginLeft: 18,
@@ -399,14 +395,12 @@ export default function Dashboard() {
         >トップに戻る</button>
         <LogoutButton />
       </div>
-      {/* タブエリア */}
       <DashboardCarouselTabs
         tabs={TABS}
         activeTab={activeTab}
         onTabChange={handleTabChange}
         color={selectedColor}
       />
-      {/* メイン（タブ切替式） */}
       <div className={styles.carouselContainer}>
         <Swiper
           effect="fade"
@@ -607,8 +601,8 @@ export default function Dashboard() {
                           </span>
                           {item.tags && item.tags.length > 0 && (
                             <span style={{ marginLeft: 10, fontSize: 13, color: "#192349", background: "#e3e8fc", borderRadius: 7, padding: "1px 7px" }}>
-                              {item.tags.map((tag: string) => (
-                                <span key={tag} style={{ marginRight: 4 }}>#{tag}</span>
+                              {item.tags.map((tag, i) => (
+                                <span key={`${tag}_${i}`} style={{ marginRight: 4 }}>#{tag}</span>
                               ))}
                             </span>
                           )}
@@ -672,6 +666,7 @@ export default function Dashboard() {
                 paddingTop: 50,
               }}>
                 <button
+                  type="button"
                   onClick={handleCommunityIn}
                   style={{
                     fontWeight: 900,

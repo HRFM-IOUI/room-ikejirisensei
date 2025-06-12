@@ -25,7 +25,7 @@ type Props = {
   rubiList?: Rubi[];
 };
 
-const PDF_LABELS = {
+const PDF_LABELS: Record<NonNullable<Props["language"]>, string> = {
   ja: "PDF変換",
   en: "Export PDF",
   tr: "PDF'ye Aktar",
@@ -34,7 +34,7 @@ const PDF_LABELS = {
   ar: "تصدير PDF",
   ru: "Экспорт PDF"
 };
-const PDF_SAVED_LABELS = {
+const PDF_SAVED_LABELS: Record<NonNullable<Props["language"]>, string> = {
   ja: "PDFをダウンロードしました。",
   en: "PDF downloaded.",
   tr: "PDF indirildi.",
@@ -43,7 +43,7 @@ const PDF_SAVED_LABELS = {
   ar: "تم تنزيل PDF.",
   ru: "PDF загружен."
 };
-const PDF_FAIL_LABELS = {
+const PDF_FAIL_LABELS: Record<NonNullable<Props["language"]>, string> = {
   ja: "PDF変換に失敗しました。もう一度お試しください。",
   en: "PDF export failed. Please try again.",
   tr: "PDF aktarımı başarısız oldu. Lütfen tekrar deneyin.",
@@ -150,7 +150,7 @@ export default function FullscreenEditorModal({
     }
   };
 
-  // PDF変換処理（トースト/インジケータ付き・多言語）
+  // PDF変換処理
   const handlePdfExport = async () => {
     setPdfLoading(true);
     toast.loading(PDF_LABELS[language] || PDF_LABELS.ja, { id: "pdf" });
@@ -199,10 +199,34 @@ export default function FullscreenEditorModal({
   const pageCount = getPageCount();
   const isMobile = typeof window !== "undefined" && window.innerWidth < 750;
 
-  // 高さ（キーボードオープン時も可変対応）
   const usableHeight = viewportHeight || (typeof window !== "undefined" ? window.innerHeight : 800);
 
-  // --- レイアウト ---
+  // 全ページを画面外で描画（PDF用）
+  const renderAllPagesForPdf = () =>
+    Array.from({ length: pageCount }).map((_, i) => (
+      <div
+        key={`pdfpage_${i}`}
+        ref={el => { pageRefs.current[i] = el; }}
+        style={{
+          position: "absolute",
+          top: 0,
+          left: "-200vw",
+          width: 1200,
+          zIndex: -9999,
+          background: "#ffffff"
+        }}
+      >
+        <GenkouViewer
+          text={content}
+          page={i}
+          lang={language}
+          cursorIndex={undefined}
+          rubiList={rubiList}
+        />
+      </div>
+    ));
+
+  // --- レイアウト ---（元のまま、type明示のみ加筆）
   const containerStyle: React.CSSProperties = {
     position: "fixed",
     top: 0, left: 0, right: 0, bottom: 0,
@@ -321,34 +345,9 @@ export default function FullscreenEditorModal({
     touchAction: "manipulation",
   };
 
-  const renderAllPagesForPdf = () => {
-    return Array.from({ length: pageCount }).map((_, i) => (
-      <div
-        key={i}
-        ref={el => { pageRefs.current[i] = el; }}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: "-200vw",
-          width: 1200,
-          zIndex: -9999,
-          background: "#ffffff"
-        }}
-      >
-        <GenkouViewer
-          text={content}
-          page={i}
-          lang={language}
-          cursorIndex={undefined}
-          rubiList={rubiList}
-        />
-      </div>
-    ));
-  };
-
   const modal = (
     <div style={containerStyle} onClick={onClose}>
-      <Toaster /> {/* トースト通知用（全体で一度だけでもOK） */}
+      <Toaster />
       <div style={modalStyle} onClick={e => e.stopPropagation()}>
         <div style={editorControlButtonStyle}>
           <EditorControlButton onClick={() => setControlOpen(true)} position="right" />
@@ -444,6 +443,7 @@ export default function FullscreenEditorModal({
               </div>
               <div style={leftButtonGroupStyle}>
                 <button
+                  type="button"
                   style={{
                     padding: isMobile ? "11px 13px" : "13px 36px",
                     borderRadius: 11,
@@ -462,6 +462,7 @@ export default function FullscreenEditorModal({
                   AI校正
                 </button>
                 <button
+                  type="button"
                   onClick={handlePdfExport}
                   disabled={pdfLoading}
                   aria-label={PDF_LABELS[language]}
@@ -481,6 +482,7 @@ export default function FullscreenEditorModal({
                   {pdfLoading ? "..." : PDF_LABELS[language]}
                 </button>
                 <button
+                  type="button"
                   style={{
                     padding: isMobile ? "11px 13px" : "13px 36px",
                     borderRadius: 11,

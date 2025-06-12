@@ -40,11 +40,12 @@ function formatDate(val: string | number | { seconds?: number }) {
 }
 
 export default function PostDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const params = useParams<{ id: string }>();
   const router = useRouter();
   const [post, setPost] = useState<PostData | null>(null);
 
   useEffect(() => {
+    const id = params?.id;
     if (!id) return;
     const fetchPost = async () => {
       const docRef = doc(db, "posts", id);
@@ -61,7 +62,7 @@ export default function PostDetailPage() {
       }
     };
     fetchPost();
-  }, [id]);
+  }, [params]);
 
   if (!post)
     return (

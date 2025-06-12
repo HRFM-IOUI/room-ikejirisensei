@@ -27,7 +27,7 @@ export default function ArticleEditList() {
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
+  // isSavingは現状未使用→削除
 
   // 記事リスト取得
   const fetchPosts = useCallback(async () => {
@@ -82,14 +82,13 @@ export default function ArticleEditList() {
     return filtered;
   }, [posts, filterTag, searchText]);
 
-  // 記事保存
+  // 記事保存（将来的に使うならonEdit内でsetEditingPostとセットで利用可能）
   const handleSave = async () => {
     if (!editingPost) return;
     if (editBlocks.length === 0) {
       toast.error("本文が空です。");
       return;
     }
-    setIsSaving(true);
     try {
       await updateDoc(doc(db, "posts", editingPost.id), { blocks: editBlocks, tags: editTags });
       toast.success("記事を更新しました！");
@@ -97,8 +96,6 @@ export default function ArticleEditList() {
       await fetchPosts();
     } catch (e) {
       toast.error("保存エラー: " + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setIsSaving(false);
     }
   };
 

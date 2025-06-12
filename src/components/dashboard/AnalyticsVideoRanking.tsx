@@ -59,7 +59,7 @@ export default function AnalyticsVideoRanking() {
   const L = LABELS[lang] || LABELS["ja"];
 
   useEffect(() => {
-    getVideoViewRankingWithDetails(10).then(res => {
+    getVideoViewRankingWithDetails(10).then((res: VideoItem[]) => {
       setVideos(res);
       setLoading(false);
     });

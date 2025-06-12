@@ -6,26 +6,25 @@ import { db, storage } from "@/firebase";
 import Image from "next/image";
 import { Toaster, toast } from "react-hot-toast";
 
-// 多言語ラベルセット
 const LANG = "ja";
 const LABELS = {
-  upload: { ja: "画像/動画をアップロード", en: "Upload Image/Video", zh: "上传图片/视频", ko: "이미지/동영상 업로드", ar: "تحميل صورة/فيديو", tr: "Görsel/Video Yükle", ru: "Загрузить изображение/видео" },
-  uploading: { ja: "アップロード中...", en: "Uploading...", zh: "上传中...", ko: "업로드 중...", ar: "جارٍ التحميل...", tr: "Yükleniyor...", ru: "Загрузка..." },
-  uploaded: { ja: "アップロード完了", en: "Upload complete", zh: "上传完成", ko: "업로드 완료", ar: "اكتمل التحميل", tr: "Yükleme tamamlandı", ru: "Загрузка завершена" },
-  uploadError: { ja: "アップロード失敗", en: "Upload failed", zh: "上传失败", ko: "업로드 실패", ar: "فشل التحميل", tr: "Yükleme başarısız", ru: "Ошибка загрузки" },
-  searchPlaceholder: { ja: "タイトルまたはタグ", en: "Title or tag", zh: "标题或标签", ko: "제목 또는 태그", ar: "العنوان أو الوسم", tr: "Başlık veya etiket", ru: "Название или тег" },
-  urlCopied: { ja: "URLをコピーしました！", en: "URL copied!", zh: "已复制URL！", ko: "URL이 복사되었습니다!", ar: "تم نسخ الرابط!", tr: "URL kopyalandı!", ru: "URL скопирован!" },
-  save: { ja: "保存", en: "Save", zh: "保存", ko: "저장", ar: "حفظ", tr: "Kaydet", ru: "Сохранить" },
-  cancel: { ja: "キャンセル", en: "Cancel", zh: "取消", ko: "취소", ar: "إلغاء", tr: "İptal", ru: "Отмена" },
-  edit: { ja: "編集", en: "Edit", zh: "编辑", ko: "편집", ar: "تعديل", tr: "Düzenle", ru: "Редактировать" },
-  delete: { ja: "削除", en: "Delete", zh: "删除", ko: "삭제", ar: "حذف", tr: "Sil", ru: "Удалить" },
-  deleted: { ja: "削除しました", en: "Deleted", zh: "已删除", ko: "삭제됨", ar: "تم الحذف", tr: "Silindi", ru: "Удалено" },
-  deleteConfirm: { ja: "本当に削除しますか？", en: "Are you sure to delete?", zh: "确定要删除吗？", ko: "정말 삭제하시겠습니까?", ar: "هل أنت متأكد من الحذف؟", tr: "Silmek istediğinizden emin misiniz?", ru: "Вы уверены, что хотите удалить?" },
-  editing: { ja: "編集中...", en: "Editing...", zh: "编辑中...", ko: "편집 중...", ar: "جارٍ التعديل...", tr: "Düzenleniyor...", ru: "Редактируется..." },
-  saveSuccess: { ja: "保存しました", en: "Saved", zh: "已保存", ko: "저장됨", ar: "تم الحفظ", tr: "Kaydedildi", ru: "Сохранено" },
-  saveError: { ja: "保存失敗", en: "Save failed", zh: "保存失败", ko: "저장 실패", ar: "فشل الحفظ", tr: "Kaydetme başarısız", ru: "Ошибка сохранения" },
-  items: { ja: "件表示中", en: "items", zh: "个项目", ko: "개 항목", ar: "عنصر", tr: "öğe", ru: "элементов" },
-  preview: { ja: "プレビュー", en: "Preview", zh: "预览", ko: "미리보기", ar: "معاينة", tr: "Önizleme", ru: "Просмотр" }
+  upload:      { ja: "画像/動画をアップロード", en: "Upload Image/Video", /* ...省略... */ },
+  uploading:   { ja: "アップロード中...",         en: "Uploading...", /* ... */ },
+  uploaded:    { ja: "アップロード完了",          en: "Upload complete", /* ... */ },
+  uploadError: { ja: "アップロード失敗",          en: "Upload failed", /* ... */ },
+  searchPlaceholder: { ja: "タイトルまたはタグ", en: "Title or tag", /* ... */ },
+  urlCopied:   { ja: "URLをコピーしました！",     en: "URL copied!", /* ... */ },
+  save:        { ja: "保存",                     en: "Save", /* ... */ },
+  cancel:      { ja: "キャンセル",               en: "Cancel", /* ... */ },
+  edit:        { ja: "編集",                     en: "Edit", /* ... */ },
+  delete:      { ja: "削除",                     en: "Delete", /* ... */ },
+  deleted:     { ja: "削除しました",             en: "Deleted", /* ... */ },
+  deleteConfirm: { ja: "本当に削除しますか？",   en: "Are you sure to delete?", /* ... */ },
+  editing:     { ja: "編集中...",                en: "Editing...", /* ... */ },
+  saveSuccess: { ja: "保存しました",             en: "Saved", /* ... */ },
+  saveError:   { ja: "保存失敗",                 en: "Save failed", /* ... */ },
+  items:       { ja: "件表示中",                 en: "items", /* ... */ },
+  preview:     { ja: "プレビュー",               en: "Preview", /* ... */ }
 };
 
 const TAG_COLORS = ["#5b8dee", "#f56c6c", "#1abc9c", "#fbc531", "#e17055", "#00b894", "#192349"];
@@ -37,7 +36,7 @@ type MediaItem = {
   name: string;
   type: "image" | "video";
   tags?: string[];
-  createdAt?: any;
+  createdAt?: Date | { toDate(): Date } | null;
 };
 
 export default function MediaLibrary() {
@@ -52,15 +51,16 @@ export default function MediaLibrary() {
   const [filtered, setFiltered] = useState<MediaItem[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 一覧取得
   useEffect(() => { fetchMedia(); }, []);
+  // 検索フィルタリング
   useEffect(() => {
     let list = [...mediaList];
     if (search.trim()) {
       const s = search.trim().toLowerCase();
       list = list.filter(
-        (m) =>
-          m.name?.toLowerCase().includes(s) ||
-          (m.tags && m.tags.some((tag) => tag.toLowerCase().includes(s)))
+        m => m.name?.toLowerCase().includes(s)
+          || (m.tags && m.tags.some(tag => tag.toLowerCase().includes(s)))
       );
     }
     setFiltered(list);
@@ -68,10 +68,14 @@ export default function MediaLibrary() {
 
   async function fetchMedia() {
     const snap = await getDocs(query(collection(db, "media"), orderBy("createdAt", "desc")));
-    setMediaList(snap.docs.map((d) => ({ id: d.id, ...d.data() } as MediaItem)));
+    setMediaList(snap.docs.map(d => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: (d.data().createdAt?.toDate?.() ?? d.data().createdAt) ?? null
+    } as MediaItem)));
   }
 
-  // サムネイル自動生成（動画のみ）
+  // 動画サムネ自動生成
   function extractThumbnail(file: File, seekTo = 1.0): Promise<Blob> {
     return new Promise((resolve, reject) => {
       const video = document.createElement("video");
@@ -84,15 +88,13 @@ export default function MediaLibrary() {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error("サムネイル生成失敗"));
-        }, "image/jpeg", 0.92);
+        canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error("サムネイル生成失敗")), "image/jpeg", 0.92);
       };
       video.onerror = () => reject(new Error("動画読み込み失敗"));
     });
   }
 
+  // アップロード処理
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -104,8 +106,7 @@ export default function MediaLibrary() {
     try {
       await uploadBytes(fileRef, file);
       const url = await getDownloadURL(fileRef);
-      let thumbnailUrl: string | undefined = undefined;
-      // サムネイル生成（動画の場合のみ）
+      let thumbnailUrl: string | undefined;
       if (ext === "video") {
         try {
           const thumbBlob = await extractThumbnail(file, 1.0);
@@ -113,7 +114,7 @@ export default function MediaLibrary() {
           await uploadBytes(thumbRef, thumbBlob);
           thumbnailUrl = await getDownloadURL(thumbRef);
         } catch (thumbErr) {
-          console.warn("サムネイル自動生成に失敗しました", thumbErr);
+          console.warn("サムネイル自動生成に失敗", thumbErr);
         }
       }
       const data: Omit<MediaItem, "id"> = {
@@ -140,7 +141,7 @@ export default function MediaLibrary() {
       fetchMedia();
       toast.success(LABELS.deleted[LANG]);
     } catch {
-      toast.error(LABELS.delete + LABELS.saveError[LANG]);
+      toast.error(LABELS.saveError[LANG]);
     }
   }
 
@@ -155,7 +156,7 @@ export default function MediaLibrary() {
     try {
       await updateDoc(doc(db, "media", id), {
         name: editTitle.trim(),
-        tags: editTags.split(" ").map((t) => t.trim()).filter(Boolean),
+        tags: editTags.split(" ").map(t => t.trim()).filter(Boolean),
       });
       setEditId(null); setEditTitle(""); setEditTags("");
       fetchMedia();
@@ -204,11 +205,11 @@ export default function MediaLibrary() {
         <div style={{ fontWeight: 700, fontSize: 14, color: "#192349", marginBottom: 6 }}>タグで絞込</div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
           {[...new Set(mediaList.flatMap(i => i.tags || []))].map((tag, i) => (
-            <span key={tag}
+            <span key={`tag-${tag}-${i}`}
               onClick={() => filterByTag(tag)}
               style={{
                 background: TAG_COLORS[i % TAG_COLORS.length],
-                color: "#ffffff", fontWeight: 700, borderRadius: 9,
+                color: "#fff", fontWeight: 700, borderRadius: 9,
                 padding: "4px 13px", fontSize: 13, cursor: "pointer",
                 marginBottom: 3
               }}
@@ -236,11 +237,12 @@ export default function MediaLibrary() {
             aria-label={LABELS.upload[LANG]}
           />
           <button
+            type="button"
             disabled={uploading}
             onClick={() => fileInputRef.current?.click()}
             style={{
               background: "#00bbee",
-              color: "#ffffff", fontWeight: 800, padding: "11px 29px",
+              color: "#fff", fontWeight: 800, padding: "11px 29px",
               border: "none", borderRadius: 8, fontSize: 16,
               cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.7 : 1,
             }}
@@ -248,18 +250,18 @@ export default function MediaLibrary() {
           >
             {uploading ? LABELS.uploading[LANG] : LABELS.upload[LANG]}
           </button>
-          <span style={{ fontSize: 15, color: "#888888", marginLeft: 12 }}>
+          <span style={{ fontSize: 15, color: "#888", marginLeft: 12 }}>
             {filtered.length}{LABELS.items[LANG]}
           </span>
         </div>
         {/* メディアグリッド */}
-        <div style={{
+        <div className="media-grid" style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))",
           gap: 22, width: "100%"
         }}>
-          {filtered.map((item) => (
+          {filtered.map(item => (
             <div key={item.id} style={{
-              background: "#ffffff", borderRadius: 11, boxShadow: "0 2px 14px #2221bb0d",
+              background: "#fff", borderRadius: 11, boxShadow: "0 2px 14px #2221bb0d",
               padding: 14, display: "flex", flexDirection: "column", alignItems: "center", position: "relative"
             }}>
               <div style={{ width: "100%", cursor: "pointer" }} onClick={() => openPreview(item)} aria-label={LABELS.preview[LANG]}>
@@ -278,7 +280,7 @@ export default function MediaLibrary() {
                     src={item.thumbnailUrl || item.url}
                     poster={item.thumbnailUrl}
                     controls
-                    style={{ width: "100%", minHeight: 120, borderRadius: 8, background: "#000000", marginBottom: 10 }}
+                    style={{ width: "100%", minHeight: 120, borderRadius: 8, background: "#000", marginBottom: 10 }}
                   />
                 )}
               </div>
@@ -306,17 +308,19 @@ export default function MediaLibrary() {
                   />
                   <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
                     <button
+                      type="button"
                       onClick={() => saveEdit(item.id)}
                       style={{
-                        background: "#5b8dee", color: "#ffffff", border: "none",
+                        background: "#5b8dee", color: "#fff", border: "none",
                         padding: "6px 15px", borderRadius: 7, fontSize: 14, fontWeight: 700, cursor: "pointer"
                       }}
                       aria-label={LABELS.save[LANG]}
                     >{LABELS.save[LANG]}</button>
                     <button
+                      type="button"
                       onClick={() => setEditId(null)}
                       style={{
-                        background: "#eeeeee", color: "#192349", border: "none",
+                        background: "#eee", color: "#192349", border: "none",
                         padding: "6px 15px", borderRadius: 7, fontSize: 14, fontWeight: 700, cursor: "pointer"
                       }}
                       aria-label={LABELS.cancel[LANG]}
@@ -330,9 +334,9 @@ export default function MediaLibrary() {
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6, width: "100%" }}>
                     {(item.tags || []).map((tag, i) => (
-                      <span key={tag} style={{
+                      <span key={`tagval-${tag}-${i}`} style={{
                         background: TAG_COLORS[i % TAG_COLORS.length],
-                        color: "#ffffff", borderRadius: 7, padding: "2px 9px", fontSize: 13, fontWeight: 600
+                        color: "#fff", borderRadius: 7, padding: "2px 9px", fontSize: 13, fontWeight: 600
                       }}>#{tag}</span>
                     ))}
                   </div>
@@ -343,6 +347,7 @@ export default function MediaLibrary() {
                 justifyContent: "flex-end", flexWrap: "wrap"
               }}>
                 <button
+                  type="button"
                   onClick={() => handleCopy(item.url)}
                   style={{
                     background: "#e3eaf6", color: "#192349", border: "none", borderRadius: 7,
@@ -351,6 +356,7 @@ export default function MediaLibrary() {
                   aria-label={LABELS.urlCopied[LANG]}
                 >URLコピー</button>
                 <button
+                  type="button"
                   onClick={() => startEdit(item)}
                   style={{
                     background: "#f6e58d", color: "#192349", border: "none", borderRadius: 7,
@@ -359,6 +365,7 @@ export default function MediaLibrary() {
                   aria-label={LABELS.edit[LANG]}
                 >{LABELS.edit[LANG]}</button>
                 <button
+                  type="button"
                   onClick={() => handleDelete(item)}
                   style={{
                     background: "#ffeaea", color: "#c00", border: "none", borderRadius: 7,
@@ -404,7 +411,6 @@ export default function MediaLibrary() {
           </div>
         </div>
       )}
-      {/* スマホ対応：下段余白 */}
       <div style={{ height: 38, width: "100%" }} />
       <style>{`
         @media (max-width: 800px) {

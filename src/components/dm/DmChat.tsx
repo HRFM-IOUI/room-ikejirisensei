@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { db } from "../../firebase";
+import React, { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
+import { db, auth } from "../../firebase";
 import {
   collection,
   query,
@@ -11,11 +11,12 @@ import {
   doc,
   serverTimestamp,
   deleteDoc,
+  DocumentData,
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
-import { auth } from "../../firebase";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+// 型定義
 type Message = {
   id: string;
   userId: string;
@@ -32,7 +33,9 @@ type Message = {
   readBy?: string[];
 };
 
-export default function DmChat({ threadId }: { threadId: string }) {
+type DmChatProps = { threadId: string };
+
+export default function DmChat({ threadId }: DmChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [replyTo, setReplyTo] = useState<Message | null>(null);
@@ -41,9 +44,9 @@ export default function DmChat({ threadId }: { threadId: string }) {
   const [sending, setSending] = useState(false);
   const [user] = useAuthState(auth);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // ①ブロック相手情報取得
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+
+  // --- ブロックユーザー取得
   useEffect(() => {
     if (!user?.uid) return;
     const blocksCol = collection(db, "users", user.uid, "blocks");
@@ -52,7 +55,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     });
   }, [user?.uid]);
 
-  // メッセージ取得
+  // --- メッセージ取得
   useEffect(() => {
     if (!threadId) return;
     const q = query(
@@ -61,19 +64,33 @@ export default function DmChat({ threadId }: { threadId: string }) {
     );
     const unsub = onSnapshot(q, (snapshot) => {
       setMessages(
-        snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        })) as Message[]
+        snapshot.docs.map((doc) => {
+          const data = doc.data() as DocumentData;
+          return {
+            id: doc.id,
+            userId: data.userId ?? "",
+            userName: data.userName ?? "",
+            userIcon: data.userIcon,
+            text: data.text ?? "",
+            imageUrl: data.imageUrl,
+            videoUrl: data.videoUrl,
+            type: data.type,
+            createdAt: data.createdAt ?? null,
+            editedAt: data.editedAt ?? null,
+            replyTo: data.replyTo,
+            mentions: data.mentions ?? [],
+            readBy: data.readBy ?? [],
+          };
+        })
       );
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      }, 30);
+      }, 20);
     });
     return () => unsub();
   }, [threadId]);
 
-  // 既読処理
+  // --- 既読処理
   useEffect(() => {
     if (!user || !threadId || messages.length === 0) return;
     const unread = messages.filter(
@@ -86,7 +103,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     });
   }, [messages, user, threadId]);
 
-  // メンション抽出
+  // --- メンション抽出
   function extractMentions(text: string): string[] {
     const mentionRegex = /@([a-zA-Z0-9_\-ぁ-んァ-ヶー一-龠]+)/g;
     const result: string[] = [];
@@ -97,7 +114,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     return result;
   }
 
-  // メディアアップロード
+  // --- メディアアップロード
   async function uploadMediaFile(file: File) {
     const ext = file.name.split(".").pop()?.toLowerCase();
     const type = file.type.startsWith("image") ? "image" :
@@ -113,7 +130,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     return { url, type };
   }
 
-  // メディア送信
+  // --- メディア送信
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
@@ -133,7 +150,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
         mentions: [],
         readBy: [user.uid],
       });
-      // スレッド情報も更新
+      // スレッド情報更新
       await updateDoc(doc(db, "dmThreads", threadId), {
         lastMessage: type === "image" ? "[画像]" : "[動画]",
         lastTimestamp: serverTimestamp(),
@@ -146,8 +163,8 @@ export default function DmChat({ threadId }: { threadId: string }) {
     setReplyTo(null);
   }
 
-  // メッセージ送信
-  async function handleSend(e: React.FormEvent) {
+  // --- メッセージ送信
+  async function handleSend(e: FormEvent) {
     e.preventDefault();
     if (!input.trim() || !user) return;
     setSending(true);
@@ -165,7 +182,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     });
     setInput("");
     setReplyTo(null);
-    // スレッド情報も更新
+    // スレッド情報更新
     await updateDoc(doc(db, "dmThreads", threadId), {
       lastMessage: input,
       lastTimestamp: serverTimestamp(),
@@ -173,18 +190,18 @@ export default function DmChat({ threadId }: { threadId: string }) {
     setSending(false);
   }
 
-  // メッセージ削除
+  // --- メッセージ削除
   async function handleDelete(msgId: string) {
     if (!window.confirm("このメッセージを削除します。よろしいですか？")) return;
     await deleteDoc(doc(db, "dmThreads", threadId, "messages", msgId));
   }
 
-  // メッセージ編集
-  async function handleEdit(msg: Message) {
+  // --- メッセージ編集
+  function startEdit(msg: Message) {
     setEditingMsgId(msg.id);
     setEditingText(msg.text);
   }
-  async function handleEditSubmit(e: React.FormEvent, msg: Message) {
+  async function handleEditSubmit(e: FormEvent, msg: Message) {
     e.preventDefault();
     if (!editingText.trim()) return;
     await updateDoc(doc(db, "dmThreads", threadId, "messages", msg.id), {
@@ -195,7 +212,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
     setEditingText("");
   }
 
-  // 通報
+  // --- 通報
   async function handleReport(msg: Message) {
     const reason = prompt("通報理由を入力してください（例：迷惑行為・スパム等）");
     if (!reason) return;
@@ -210,21 +227,21 @@ export default function DmChat({ threadId }: { threadId: string }) {
     alert("通報ありがとうございました。運営が確認します。");
   }
 
-  // Enter送信/Shift+Enter改行
-  function handleInputKeyDown(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  // --- Enter送信/Shift+Enter改行
+  function handleInputKeyDown(e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend(e as any);
     }
   }
 
+  // --- 表示制御
   const currentUserId = user?.uid;
-
-  // 相手ブロック時に非表示
-  const visibleMessages = messages.filter(msg =>
-    !blockedUsers.includes(msg.userId) || msg.userId === currentUserId
+  const visibleMessages = messages.filter(
+    msg => !blockedUsers.includes(msg.userId) || msg.userId === currentUserId
   );
 
+  // --- UI
   return (
     <div style={{
       flex: 1,
@@ -311,8 +328,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
                     Re: {messages.find(m => m.id === msg.replyTo)?.text?.slice(0, 12) || "元メッセージ"}
                   </span>
                 )}
-
-                {/* メディア/本文（インライン編集含む） */}
+                {/* メディア/本文 */}
                 {editingMsgId === msg.id ? (
                   <form onSubmit={e => handleEditSubmit(e, msg)} style={{ display: "flex", gap: 6 }}>
                     <input
@@ -325,7 +341,6 @@ export default function DmChat({ threadId }: { threadId: string }) {
                   </form>
                 ) : (
                   <>
-                    {/* メディア */}
                     {msg.type === "image" && msg.imageUrl && (
                       <img src={msg.imageUrl} alt="画像" style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0" }} />
                     )}
@@ -347,12 +362,11 @@ export default function DmChat({ threadId }: { threadId: string }) {
                     </div>
                   </>
                 )}
-
-                {/* アクションメニュー（三点リーダー） */}
-                {(msg.userId === currentUserId) && (
+                {/* アクションメニュー */}
+                {msg.userId === currentUserId && (
                   <div style={{ position: "absolute", top: 7, right: 6 }}>
                     <button
-                      onClick={() => setEditingMsgId(msg.id)}
+                      onClick={() => startEdit(msg)}
                       style={{ border: "none", background: "none", fontSize: 20, cursor: "pointer", color: "#6a7eb6" }}
                       title="メッセージ操作"
                     >︙</button>
@@ -362,7 +376,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
                         background: "#fff", border: "1px solid #b8d0ef", borderRadius: 7, boxShadow: "0 1px 5px #a9d2fa44"
                       }}>
                         <button
-                          onClick={() => handleEdit(msg)}
+                          onClick={() => startEdit(msg)}
                           style={{ padding: "7px 18px", border: "none", background: "none", cursor: "pointer", fontWeight: 600 }}
                         >編集</button>
                         <button
@@ -379,6 +393,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
                 )}
                 {/* リプライボタン */}
                 <button
+                  type="button"
                   onClick={() => setReplyTo(msg)}
                   style={{
                     marginLeft: 12, background: "#f2f7ff", color: "#1881e1",
@@ -411,6 +426,7 @@ export default function DmChat({ threadId }: { threadId: string }) {
         }}>
           リプ: {replyTo.text?.slice(0, 32)}...
           <button
+            type="button"
             onClick={() => setReplyTo(null)}
             style={{
               background: "#fff", color: "#666", border: "none", borderRadius: 7,
