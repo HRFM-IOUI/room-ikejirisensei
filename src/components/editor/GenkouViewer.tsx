@@ -203,6 +203,19 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
+  // ページ送り機能
+  const goToNextPage = () => {
+    if (currentPage < pages.length - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   useEffect(() => {
     const handleResize = () => {
       const sidebar = 280;
