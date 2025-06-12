@@ -180,16 +180,15 @@ const GenkouViewer: React.FC<Props> = ({
   const cfg = LANG_CONFIG[lang] || LANG_CONFIG["ja"];
   const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title } = cfg;
 
-  // サイズ追従: 高さ-2cm, 横幅+12cm（cm→px換算: 1cm≒37.8px）
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
   const [currentPage, setCurrentPage] = useState(page);
 
   useEffect(() => {
     const handleResize = () => {
-      const sidebar = 280; // サイドバー幅想定
+      const sidebar = 280;
       const margin = 28;
-      let maxW = window.innerWidth - sidebar - margin + (37.8 * 12); // 横+12cm
-      let maxH = window.innerHeight - 96 - (37.8 * 2);               // 縦-2cm
+      let maxW = window.innerWidth - sidebar - margin + (37.8 * 12);
+      let maxH = window.innerHeight - 96 - (37.8 * 2);
       maxW = Math.max(400, Math.min(maxW, 1800));
       maxH = Math.max(350, Math.min(maxH, 1050));
       const ratio = 297 / 210;
@@ -388,7 +387,7 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
-  // 列番号
+  // 列番号を表示する
   const lineNumberSVG: React.ReactNode[] = [];
   const lineNumFont = `${Math.max(13, fontSize * 0.9)}px ${fontFamily}`;
   const lineNumColor = "#bcb893";
