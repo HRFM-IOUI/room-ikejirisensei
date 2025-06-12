@@ -10,7 +10,7 @@ import {
   addDoc,
   serverTimestamp,
   onSnapshot,
-  doc,
+  // doc, ←★未使用なので削除！
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../../firebase";

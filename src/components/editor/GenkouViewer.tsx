@@ -109,7 +109,7 @@ const STROKE_MAIN = "#b9cbe9";
 const STROKE_CENTER = "#ddbb4b";
 const CURSOR_HIGHLIGHT = "#43aaff";
 const KINSOKU_HEAD = ["。", "、", ")", "]", "）", "」", "』", "】", "〙", "〗", "’", "”", "›", "≫", "》"];
-const KINSOKU_TAIL = ["「", "『", "（", "【", "〘", "〖", "‘", "“", "‹", "≪", "《"];
+// const KINSOKU_TAIL = ["「", "『", "（", "【", "〘", "〖", "‘", "“", "‹", "≪", "《"]; // ←未使用のため削除
 
 // テキスト分割＋変換テーブル生成
 function splitTextToPagesWithIndentAndKinsoku(
@@ -122,7 +122,7 @@ function splitTextToPagesWithIndentAndKinsoku(
   const grid: string[] = [];
   const textToGrid: number[] = [];
   const gridToText: number[] = [];
-  let gridIdx = 0;
+  // let gridIdx = 0; // ←未使用のため削除
   const paragraphs = text.split(/\r?\n/);
   let textIdx = 0;
 
@@ -139,7 +139,7 @@ function splitTextToPagesWithIndentAndKinsoku(
     if (p.length > 0 && lang === "ja") {
       grid.push("");
       gridToText.push(-1);
-      gridIdx++;
+      // gridIdx++; // ←未使用
     }
     for (let ci = 0; ci < p.length; ++ci) {
       if (
@@ -160,7 +160,7 @@ function splitTextToPagesWithIndentAndKinsoku(
         textToGrid[textIdx] = grid.length;
         grid.push(p[ci]);
         gridToText.push(textIdx);
-        gridIdx++;
+        // gridIdx++; // ←未使用
       }
       textIdx++;
     }
@@ -242,7 +242,7 @@ const GenkouViewer: React.FC<Props> = ({
   }[] = [];
   for (const r of rubiList) {
     const startTextIdx = r.index;
-    const endTextIdx = r.index + r.length;
+    // const endTextIdx = r.index + r.length; // ←未使用のため削除
     const gridStart = textToGrid[startTextIdx];
     // gridEndは使用しないため削除
     const pageStart = page * cols * rows;

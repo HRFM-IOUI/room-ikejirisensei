@@ -122,8 +122,8 @@ export default function FullscreenEditorModal({
     }
   }, [open, value]);
 
-  const handleTextareaEvents = (_e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const target = _e.target as HTMLTextAreaElement;
+  const handleTextareaEvents = (event: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const target = event.target as HTMLTextAreaElement;
     setCursorIndex(target.selectionStart ?? 0);
   };
 
@@ -226,7 +226,7 @@ export default function FullscreenEditorModal({
       </div>
     ));
 
-  // --- レイアウト ---（元のまま、type明示のみ加筆）
+  // --- レイアウト ---
   const containerStyle: React.CSSProperties = {
     position: "fixed",
     top: 0, left: 0, right: 0, bottom: 0,
@@ -348,7 +348,7 @@ export default function FullscreenEditorModal({
   const modal = (
     <div style={containerStyle} onClick={onClose}>
       <Toaster />
-      <div style={modalStyle} onClick={e => e.stopPropagation()}>
+      <div style={modalStyle} onClick={event => event.stopPropagation()}>
         <div style={editorControlButtonStyle}>
           <EditorControlButton onClick={() => setControlOpen(true)} position="right" />
         </div>

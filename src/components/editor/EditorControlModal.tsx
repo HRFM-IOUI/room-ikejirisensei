@@ -12,7 +12,7 @@ type Props = {
   onSave: () => void;
   onCancel: () => void;
   onClose: () => void;
-  language?: "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
+  // language?: "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar"; ← 未使用なのでコメントアウト（削除でもOK）
 };
 
 const MODES: { key: EditorMode; label: string }[] = [
@@ -24,7 +24,8 @@ const MODES: { key: EditorMode; label: string }[] = [
 const isMobile = typeof window !== "undefined" && window.innerWidth <= 600;
 
 const EditorControlModal: React.FC<Props> = ({
-  open, mode, setMode, currentPage, totalPages, setCurrentPage, onSave, onCancel, onClose, language = "ja",
+  open, mode, setMode, currentPage, totalPages, setCurrentPage, onSave, onCancel, onClose,
+  // language = "ja", ← 未使用
 }) => {
   if (!open) return null;
 

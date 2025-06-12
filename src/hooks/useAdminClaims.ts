@@ -22,8 +22,8 @@ export function useAdminClaims() {
       setLoading(false);
     };
     checkClaims();
-    // auth自体のみ依存。currentUserは内部管理で十分
-  }, [auth]);
+    // auth自体は依存しない
+  }, []); // ← 依存配列は空でOK
 
   return [isAdmin, loading] as const;
 }

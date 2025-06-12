@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
-import Image from "next/image"; // 追加
+import React, { useState, useRef, useEffect, FormEvent, KeyboardEvent, ChangeEvent } from "react";
+import Image from "next/image";
 import { db, auth } from "../../firebase";
 import {
   collection,
@@ -17,6 +17,8 @@ import {
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
+import { Timestamp } from "firebase/firestore"; // 追加：createdAt型用
+
 // 型定義
 type Message = {
   id: string;
@@ -27,8 +29,8 @@ type Message = {
   imageUrl?: string;
   videoUrl?: string;
   type?: "text" | "image" | "video";
-  createdAt: any;
-  editedAt?: any;
+  createdAt: Timestamp | null;
+  editedAt?: Timestamp | null;
   replyTo?: string;
   mentions?: string[];
   readBy?: string[];
@@ -81,7 +83,7 @@ export default function DmChat({ threadId }: DmChatProps) {
             replyTo: data.replyTo,
             mentions: data.mentions ?? [],
             readBy: data.readBy ?? [],
-          };
+          } as Message;
         })
       );
       setTimeout(() => {
@@ -108,7 +110,7 @@ export default function DmChat({ threadId }: DmChatProps) {
   function extractMentions(text: string): string[] {
     const mentionRegex = /@([a-zA-Z0-9_\-ぁ-んァ-ヶー一-龠]+)/g;
     const result: string[] = [];
-    let match;
+    let match: RegExpExecArray | null;
     while ((match = mentionRegex.exec(text)) !== null) {
       result.push(match[1]);
     }
@@ -132,7 +134,7 @@ export default function DmChat({ threadId }: DmChatProps) {
   }
 
   // --- メディア送信
-  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setSending(true);
@@ -156,8 +158,12 @@ export default function DmChat({ threadId }: DmChatProps) {
         lastMessage: type === "image" ? "[画像]" : "[動画]",
         lastTimestamp: serverTimestamp(),
       });
-    } catch (err: any) {
-      alert(err.message || "メディア送信失敗");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("メディア送信失敗");
+      }
     }
     setSending(false);
     e.target.value = "";
@@ -417,7 +423,7 @@ export default function DmChat({ threadId }: DmChatProps) {
                 <div style={{
                   fontSize: 11, color: "#9cb3cc", textAlign: "right", marginTop: 4
                 }}>
-                  {msg.createdAt && msg.createdAt.toDate
+                  {msg.createdAt && "toDate" in msg.createdAt && typeof msg.createdAt.toDate === "function"
                     ? msg.createdAt.toDate().toLocaleTimeString().slice(0, 5)
                     : "--:--"}
                   {msg.readBy && msg.readBy.length > 1 && (

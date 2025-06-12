@@ -20,14 +20,14 @@ type Post = {
 
 export default function ArticleEditList() {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [editBlocks, setEditBlocks] = useState<Block[]>([]);
-  const [editTags, setEditTags] = useState<string[]>([]);
+  // 編集機能が今後追加される場合、下記はコメントアウトのまま残すと良い
+  // const [editingPost, setEditingPost] = useState<Post | null>(null);
+  // const [editBlocks, setEditBlocks] = useState<Block[]>([]);
+  // const [editTags, setEditTags] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  // isSavingは現状未使用→削除
 
   // 記事リスト取得
   const fetchPosts = useCallback(async () => {
@@ -81,9 +81,6 @@ export default function ArticleEditList() {
     }
     return filtered;
   }, [posts, filterTag, searchText]);
-
-  // （未使用のため削除）
-  // const handleSave = async () => { ... }
 
   // 単一記事削除
   const handleDelete = async (id: string) => {
@@ -208,21 +205,16 @@ export default function ArticleEditList() {
               key={post.id}
               post={post}
               selected={selectedIds.includes(post.id)}
-              onEdit={() => {
-                setEditingPost(post);
-                setEditBlocks(post.blocks || []);
-                setEditTags(post.tags || []);
-              }}
+              onEdit={() => {}} // ← 型エラー回避のため空関数を渡す
               onDelete={() => handleDelete(post.id)}
               onToggleStatus={() => handleToggleStatus(post)}
               onDuplicate={() => handleDuplicate(post)}
               onSelect={checked => handleSelectOne(post.id, checked)}
-              // isMobile={isMobile} ← 削除
             />
           ))}
         </ul>
       )}
-      {/* 編集モーダルや他のUIはこの後追加 */}
+      {/* 編集モーダルや他のUIはこの後追加予定 */}
     </section>
   );
 }

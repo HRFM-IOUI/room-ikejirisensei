@@ -10,6 +10,8 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  DocumentData,
+  QueryDocumentSnapshot,
 } from "firebase/firestore";
 
 /**
@@ -175,19 +177,24 @@ export async function getUserCountsByDate() {
   const snap = await getDocs(collection(db, "users"));
   // 登録日のISO日付単位にグルーピング
   const dateMap: { [date: string]: number } = {};
-  snap.docs.forEach((d) => {
-    const userData = d.data() as Record<string, any>;
+  snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
+    const userData = d.data() as { createdAt?: { toDate?: () => Date } | string | number };
     const createdAt = userData.createdAt;
-    const dateObj =
-      typeof createdAt?.toDate === "function"
-        ? createdAt.toDate()
-        : createdAt
-        ? new Date(createdAt)
-        : null;
-    if (!dateObj) return;
-    const date = (dateObj instanceof Date ? dateObj : new Date(dateObj))
-      .toISOString()
-      .slice(0, 10);
+    let dateObj: Date | null = null;
+
+    if (createdAt && typeof (createdAt as { toDate?: () => Date }).toDate === "function") {
+      dateObj = (createdAt as { toDate: () => Date }).toDate();
+    } else if (
+      typeof createdAt === "string" ||
+      typeof createdAt === "number"
+    ) {
+      dateObj = new Date(createdAt);
+    } else if (createdAt instanceof Date) {
+      dateObj = createdAt;
+    }
+
+    if (!dateObj || isNaN(dateObj.getTime())) return;
+    const date = dateObj.toISOString().slice(0, 10);
     dateMap[date] = (dateMap[date] || 0) + 1;
   });
   // 日付ソート・累積
@@ -226,6 +233,8 @@ export async function getActiveUserCount(days: number): Promise<number> {
       lastDate = lastActive.toDate();
     } else if (typeof lastActive === "string" || typeof lastActive === "number") {
       lastDate = new Date(lastActive);
+    } else if (lastActive instanceof Date) {
+      lastDate = lastActive;
     }
     if (lastDate && lastDate >= since) {
       count++;
