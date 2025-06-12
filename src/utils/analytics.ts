@@ -10,14 +10,40 @@ import {
   serverTimestamp,
   query,
   orderBy,
-  DocumentData,
   QueryDocumentSnapshot,
-  Timestamp, // Timestamp型のインポート
+  Timestamp,
 } from "firebase/firestore";
 
-/**
- * [1] 記事PVカウント（articleViewsコレクションにインクリメント記録）
- */
+// 型定義
+interface ArticleView {
+  count?: number;
+  updatedAt?: Timestamp;
+}
+
+interface Post {
+  title?: string;
+  tags?: string[];
+  blocks?: { content?: string[] }[];
+  createdAt?: Timestamp | string | number | Date;
+}
+
+interface Video {
+  title?: string;
+  tags?: string[];
+  thumbnail?: string;
+  createdAt?: Timestamp | string | number | Date;
+}
+
+interface User {
+  createdAt?: Timestamp | string | number | Date;
+  lastActive?: Timestamp | string | number | Date;
+}
+
+interface Donation {
+  amount?: number;
+}
+
+// [1] 記事PVカウント
 export async function logArticleView(postId: string) {
   if (!postId) return;
   const ref = doc(db, "articleViews", postId);
@@ -28,46 +54,54 @@ export async function logArticleView(postId: string) {
   );
 }
 
-/**
- * [2] 記事PVランキング（PV数でソート、トップN件取得、ID+PV数のみ）
- */
+// [2] 記事PVランキング（ID + PV数のみ）
 export async function getArticleViewRanking(limit: number = 10) {
   const snap = await getDocs(
     query(collection(db, "articleViews"), orderBy("count", "desc"))
   );
-  return snap.docs.slice(0, limit).map((d) => ({
-    id: d.id,
-    count: d.data().count ?? 0,
-    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
-  }));
+  return snap.docs.slice(0, limit).map((d) => {
+    const data = d.data() as ArticleView;
+    return {
+      id: d.id,
+      count: data.count ?? 0,
+      updatedAt: data.updatedAt?.toDate?.() ?? null,
+    };
+  });
 }
 
-/**
- * [3] 記事PVランキング + タイトル・タグ等の詳細も同時取得（推奨UI用）
- */
+// [3] 記事PVランキング + 詳細取得
 export async function getArticleViewRankingWithDetails(limit: number = 10) {
   const pvSnap = await getDocs(
     query(collection(db, "articleViews"), orderBy("count", "desc"))
   );
-  const top = pvSnap.docs.slice(0, limit).map((d) => ({
-    id: d.id,
-    pv: d.data().count ?? 0,
-    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
-  }));
+  const top = pvSnap.docs.slice(0, limit).map((d) => {
+    const data = d.data() as ArticleView;
+    return {
+      id: d.id,
+      pv: data.count ?? 0,
+      updatedAt: data.updatedAt?.toDate?.() ?? null,
+    };
+  });
 
-  // 並列で記事タイトル・タグ等も取得
   const detailPromises = top.map(async (item) => {
     try {
       const postSnap = await getDoc(doc(db, "posts", item.id));
-      const postData = postSnap.exists() ? postSnap.data() : {};
+      const postData = postSnap.exists() ? (postSnap.data() as Post) : {};
       return {
         ...item,
         title:
-          (postData as { blocks?: { content?: string[] }[] })?.blocks?.[0]?.content?.slice(0, 30) ||
-          (postData as { title?: string })?.title ||
+          postData.blocks?.[0]?.content?.slice(0, 30) ??
+          postData.title ??
           "無題",
-        tags: (postData as { tags?: string[] })?.tags || [],
-        createdAt: (postData as { createdAt?: Timestamp })?.createdAt?.toDate?.() || null,
+        tags: postData.tags ?? [],
+        createdAt:
+          postData.createdAt instanceof Timestamp
+            ? postData.createdAt.toDate()
+            : typeof postData.createdAt === "string" || typeof postData.createdAt === "number"
+              ? new Date(postData.createdAt)
+              : postData.createdAt instanceof Date
+                ? postData.createdAt
+                : null,
       };
     } catch {
       return {
@@ -82,9 +116,7 @@ export async function getArticleViewRankingWithDetails(limit: number = 10) {
   return await Promise.all(detailPromises);
 }
 
-/**
- * [4] 動画再生PVカウント（videoViewsコレクションにインクリメント記録）
- */
+// [4] 動画再生PVカウント
 export async function logVideoView(videoId: string) {
   if (!videoId) return;
   const ref = doc(db, "videoViews", videoId);
@@ -95,59 +127,69 @@ export async function logVideoView(videoId: string) {
   );
 }
 
-/**
- * [5] 動画PVランキング（ID＋再生数のみ。詳細はgetVideoRankingWithDetails推奨）
- */
+// [5] 動画PVランキング
 export async function getVideoViewRanking(limit: number = 10) {
   const snap = await getDocs(
     query(collection(db, "videoViews"), orderBy("count", "desc"))
   );
-  return snap.docs.slice(0, limit).map((d) => ({
-    id: d.id,
-    count: d.data().count ?? 0,
-    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
-  }));
+  return snap.docs.slice(0, limit).map((d) => {
+    const data = d.data() as ArticleView;
+    return {
+      id: d.id,
+      count: data.count ?? 0,
+      updatedAt: data.updatedAt?.toDate?.() ?? null,
+    };
+  });
 }
 
-/**
- * [6] 動画ランキング（videosコレクションのviewsフィールドでソート。タイトル・views取得）
- */
+// [6] 動画ランキング（videosコレクションのviewsでソート）
 export async function getVideoRanking() {
-  const q = query(collection(db, "videos"), orderBy("views", "desc"));
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => ({
-    id: d.id,
-    title: d.data().title || "無題動画",
-    views: d.data().views || 0,
-    tags: d.data().tags || [],
-    thumbnail: d.data().thumbnail || null,
-  }));
+  const snap = await getDocs(
+    query(collection(db, "videos"), orderBy("views", "desc"))
+  );
+  return snap.docs.map((d) => {
+    const data = d.data() as Video & { views?: number };
+    return {
+      id: d.id,
+      title: data.title ?? "無題動画",
+      views: data.views ?? 0,
+      tags: data.tags ?? [],
+      thumbnail: data.thumbnail ?? null,
+    };
+  });
 }
 
-/**
- * [7] 動画PVランキング + タイトル・タグ等の詳細も同時取得（推奨UI用）
- */
+// [7] 動画PVランキング + 詳細
 export async function getVideoViewRankingWithDetails(limit: number = 10) {
   const pvSnap = await getDocs(
     query(collection(db, "videoViews"), orderBy("count", "desc"))
   );
-  const top = pvSnap.docs.slice(0, limit).map((d) => ({
-    id: d.id,
-    pv: d.data().count ?? 0,
-    updatedAt: d.data().updatedAt?.toDate?.() ?? null,
-  }));
+  const top = pvSnap.docs.slice(0, limit).map((d) => {
+    const data = d.data() as ArticleView;
+    return {
+      id: d.id,
+      pv: data.count ?? 0,
+      updatedAt: data.updatedAt?.toDate?.() ?? null,
+    };
+  });
 
-  // 並列で動画タイトル・タグ・サムネ等も取得
   const detailPromises = top.map(async (item) => {
     try {
       const videoSnap = await getDoc(doc(db, "videos", item.id));
-      const videoData = videoSnap.exists() ? videoSnap.data() : {};
+      const videoData = videoSnap.exists() ? (videoSnap.data() as Video) : {};
       return {
         ...item,
-        title: (videoData as { title?: string })?.title || "無題動画",
-        tags: (videoData as { tags?: string[] })?.tags || [],
-        thumbnail: (videoData as { thumbnail?: string })?.thumbnail || null,
-        createdAt: (videoData as { createdAt?: Timestamp })?.createdAt?.toDate?.() || null,
+        title: videoData.title ?? "無題動画",
+        tags: videoData.tags ?? [],
+        thumbnail: videoData.thumbnail ?? null,
+        createdAt:
+          videoData.createdAt instanceof Timestamp
+            ? videoData.createdAt.toDate()
+            : typeof videoData.createdAt === "string" || typeof videoData.createdAt === "number"
+              ? new Date(videoData.createdAt)
+              : videoData.createdAt instanceof Date
+                ? videoData.createdAt
+                : null,
       };
     } catch {
       return {
@@ -163,33 +205,24 @@ export async function getVideoViewRankingWithDetails(limit: number = 10) {
   return await Promise.all(detailPromises);
 }
 
-/**
- * [8] 会員登録ユーザー数（合計）
- */
+// [8] 会員登録ユーザー数
 export async function getUserSignupStats() {
   const snap = await getDocs(collection(db, "users"));
   return { total: snap.size };
 }
 
-/**
- * [9] 日付単位で累計会員数（新規・推移グラフ用）
- */
+// [9] 日付単位で累計ユーザー数
 export async function getUserCountsByDate() {
   const snap = await getDocs(collection(db, "users"));
-  // 登録日のISO日付単位にグルーピング
   const dateMap: { [date: string]: number } = {};
-  snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
-    const userData = d.data() as { createdAt?: Timestamp | string | number }; // Timestamp型を型指定
-    const createdAt = userData.createdAt;
+  snap.docs.forEach((d: QueryDocumentSnapshot) => {
+    const user = d.data() as User;
+    const createdAt = user.createdAt;
     let dateObj: Date | null = null;
 
-    // createdAtがTimestampである場合、toDate()を使用
     if (createdAt instanceof Timestamp) {
       dateObj = createdAt.toDate();
-    } else if (
-      typeof createdAt === "string" ||
-      typeof createdAt === "number"
-    ) {
+    } else if (typeof createdAt === "string" || typeof createdAt === "number") {
       dateObj = new Date(createdAt);
     } else if (createdAt instanceof Date) {
       dateObj = createdAt;
@@ -200,16 +233,13 @@ export async function getUserCountsByDate() {
     dateMap[date] = (dateMap[date] || 0) + 1;
   });
 
-  // 日付ソート・累積
   const dates = Object.keys(dateMap).sort();
   let total = 0;
   const userCounts = dates.map((date) => (total += dateMap[date]));
   return { dates, userCounts };
 }
 
-/**
- * [10] アクティブユーザー数記録（lastActiveフィールドにタイムスタンプ保存）
- */
+// [10] アクティブユーザー記録
 export async function markUserActive(userId: string) {
   if (!userId) return;
   try {
@@ -217,24 +247,21 @@ export async function markUserActive(userId: string) {
       lastActive: serverTimestamp(),
     });
   } catch {
-    // エラーは握りつぶし
+    // 無視
   }
 }
 
-/**
- * [11] 指定日数以内のアクティブユーザー数取得（DAU/WAU/MAU分析用）
- */
+// [11] アクティブユーザー数取得
 export async function getActiveUserCount(days: number): Promise<number> {
   const snap = await getDocs(collection(db, "users"));
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   let count = 0;
 
   snap.forEach((d) => {
-    const userData = d.data() as Record<string, unknown>;
-    const lastActive = userData.lastActive;
+    const user = d.data() as User;
+    const lastActive = user.lastActive;
     let lastDate: Date | null = null;
 
-    // lastActiveがTimestampである場合、toDate()を使用
     if (lastActive instanceof Timestamp) {
       lastDate = lastActive.toDate();
     } else if (typeof lastActive === "string" || typeof lastActive === "number") {
@@ -242,58 +269,61 @@ export async function getActiveUserCount(days: number): Promise<number> {
     } else if (lastActive instanceof Date) {
       lastDate = lastActive;
     }
+
     if (lastDate && lastDate >= since) {
       count++;
     }
   });
+
   return count;
 }
 
-/**
- * [12] 寄付/カンパ履歴集計（現在はStripeダッシュボード利用推奨。Firestore版も用意可）
- */
+// [12] 寄付履歴集計
 export async function getDonationStats() {
   const snap = await getDocs(collection(db, "donations"));
   let total = 0;
   snap.forEach((d) => {
-    const data = d.data() as Record<string, unknown>;
+    const data = d.data() as Donation;
     total += Number(data.amount ?? 0);
   });
   return { total, count: snap.size };
 }
 
-/**
- * [13] Google Analytics (GA4) イベント送信（フロントから呼ぶ場合のみ有効）
- */
+// [13] GAイベント送信
 export function sendGAEvent(eventName: string, params: Record<string, unknown> = {}) {
   if (typeof window !== "undefined" && (window as any).gtag) {
     (window as any).gtag("event", eventName, params);
   }
 }
 
-/**
- * [14] 記事詳細取得（IDからタイトル・タグ・作成日ほかを取得）
- */
+// [14] 記事詳細取得
 export async function getArticleDetail(postId: string) {
   if (!postId) return null;
   const ref = doc(db, "posts", postId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  const data = snap.data() as Record<string, unknown>;
+  const data = snap.data() as Post;
+
+  const createdAt =
+    data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : typeof data.createdAt === "string" || typeof data.createdAt === "number"
+        ? new Date(data.createdAt)
+        : data.createdAt instanceof Date
+          ? data.createdAt
+          : null;
+
   return {
     id: postId,
     title: data.blocks?.[0]?.content?.slice(0, 30) || data.title || "無題",
-    tags: data.tags || [],
-    createdAt: data.createdAt?.toDate?.() || null,
+    tags: data.tags ?? [],
+    createdAt,
     ...data,
   };
 }
 
-/**
- * [15] 流入元（リファラー）をFirestoreで記録
- */
+// [15] リファラー記録
 export async function logReferral(referrer?: string) {
-  // referrerが未指定ならwindow.document.referrerから自動取得
   if (typeof window !== "undefined" && !referrer) {
     referrer = document.referrer;
   }
@@ -307,6 +337,7 @@ export async function logReferral(referrer?: string) {
   } else if (referrer.includes("facebook.")) {
     key = "facebook";
   }
+
   const ref = doc(db, "referralStats", key);
   await setDoc(
     ref,
@@ -315,9 +346,7 @@ export async function logReferral(referrer?: string) {
   );
 }
 
-/**
- * [16] 流入元チャネルの集計データ取得（本番はFirestore連動済み）
- */
+// [16] リファラーステータス集計
 export async function getReferralStats() {
   const snap = await getDocs(collection(db, "referralStats"));
   return snap.docs.map((d) => ({

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FaCalendarAlt, FaRegHeart, FaHeart, FaShareAlt } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { logReferral, sendGAEvent } from "@/utils/analytics";
 
 // タグごとに色分け
 const TAG_COLORS: { [key: string]: string } = {
@@ -42,9 +43,7 @@ function useFavorites() {
   }, []);
   const toggleFav = (id: string) => {
     setFavs(f => {
-      let next;
-      if (f.includes(id)) next = f.filter(i => i !== id);
-      else next = [...f, id];
+      const next = f.includes(id) ? f.filter(i => i !== id) : [...f, id];
       localStorage.setItem("favorites", JSON.stringify(next));
       return next;
     });
@@ -73,6 +72,7 @@ export default function PostsPage() {
   const { favs, toggleFav } = useFavorites();
   const router = useRouter();
 
+  // Firebaseから記事取得
   useEffect(() => {
     (async () => {
       const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
@@ -94,12 +94,17 @@ export default function PostsPage() {
     })();
   }, []);
 
+  // トラッキング（GAイベント & リファラー）
+  useEffect(() => {
+    sendGAEvent("記事一覧ページ閲覧");
+    logReferral();
+  }, []);
+
   // シェアボタン
   const handleShare = (post: PostData) => {
-    const url =
-      typeof window !== "undefined"
-        ? window.location.origin + `/posts/${post.id}`
-        : "";
+    const url = typeof window !== "undefined"
+      ? window.location.origin + `/posts/${post.id}`
+      : "";
     if (navigator.share) {
       navigator.share({ title: post.title, url });
     } else {
@@ -128,7 +133,6 @@ export default function PostsPage() {
           <div className="text-lg text-gray-400 text-center py-16 col-span-full">まだ記事がありません。</div>
         ) : (
           posts.map((post, i) => {
-            // サムネイル画像を blocks の最初の image ブロックから取得
             const firstImage = post.blocks?.find?.(
               (b) => b.type === "image" && b.content
             ) as Block | undefined;
@@ -141,10 +145,7 @@ export default function PostsPage() {
                   hover:shadow-2xl hover:scale-[1.03] hover:border-[#192349] transition-all duration-200
                   bg-white cursor-pointer ripple-effect animate-fadein
                 `}
-                style={{
-                  minHeight: 280,
-                  animationDelay: `${i * 70}ms`,
-                }}
+                style={{ minHeight: 280, animationDelay: `${i * 70}ms` }}
                 onClick={e => {
                   if ((e.target as HTMLElement).closest(".btn-card-action")) return;
                   router.push(`/posts/${post.id}`);
@@ -152,7 +153,6 @@ export default function PostsPage() {
               >
                 <span className="ripple"></span>
                 <div className="relative w-full h-48 overflow-hidden">
-                  {/* サムネイル：blocks画像 or デフォルト */}
                   <Image
                     src={firstImage?.content || "/logo.svg"}
                     alt={post.title}
