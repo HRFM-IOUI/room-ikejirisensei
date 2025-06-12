@@ -82,22 +82,8 @@ export default function ArticleEditList() {
     return filtered;
   }, [posts, filterTag, searchText]);
 
-  // 記事保存（将来的に使うならonEdit内でsetEditingPostとセットで利用可能）
-  const handleSave = async () => {
-    if (!editingPost) return;
-    if (editBlocks.length === 0) {
-      toast.error("本文が空です。");
-      return;
-    }
-    try {
-      await updateDoc(doc(db, "posts", editingPost.id), { blocks: editBlocks, tags: editTags });
-      toast.success("記事を更新しました！");
-      setEditingPost(null);
-      await fetchPosts();
-    } catch (e) {
-      toast.error("保存エラー: " + (e instanceof Error ? e.message : String(e)));
-    }
-  };
+  // （未使用のため削除）
+  // const handleSave = async () => { ... }
 
   // 単一記事削除
   const handleDelete = async (id: string) => {
@@ -231,7 +217,7 @@ export default function ArticleEditList() {
               onToggleStatus={() => handleToggleStatus(post)}
               onDuplicate={() => handleDuplicate(post)}
               onSelect={checked => handleSelectOne(post.id, checked)}
-              isMobile={isMobile}
+              // isMobile={isMobile} ← 削除
             />
           ))}
         </ul>

@@ -14,6 +14,7 @@ import {
 } from "firebase/firestore";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import Image from "next/image"; // 追加
 
 // Firestore Timestamp型
 type FirestoreTimestamp = {
@@ -341,7 +342,14 @@ export default function ChatRoom({ roomId }: ChatRoomProps) {
               <>
                 {/* メディア */}
                 {msg.type === "image" && msg.imageUrl && (
-                  <img src={msg.imageUrl} alt="画像" style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0" }} />
+                  <Image
+                    src={msg.imageUrl}
+                    alt="画像"
+                    width={180}
+                    height={120}
+                    style={{ maxWidth: 180, height: "auto", borderRadius: 10, margin: "7px 0" }}
+                    unoptimized
+                  />
                 )}
                 {msg.type === "video" && msg.videoUrl && (
                   <video src={msg.videoUrl} controls style={{ maxWidth: 210, borderRadius: 10, margin: "7px 0" }} />

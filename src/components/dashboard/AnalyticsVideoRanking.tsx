@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { getVideoViewRankingWithDetails } from "@/utils/analytics";
+import Image from "next/image"; // 追加
 
 // 多言語ラベル（必要なら拡張可能）
 const LABELS: Record<string, Record<string, string>> = {
@@ -107,9 +108,11 @@ export default function AnalyticsVideoRanking() {
               }}
             >
               {v.thumbnail && (
-                <img
+                <Image
                   src={v.thumbnail}
                   alt={v.title}
+                  width={48}
+                  height={32}
                   style={{
                     width: 48,
                     height: 32,
@@ -119,6 +122,7 @@ export default function AnalyticsVideoRanking() {
                     marginRight: 8,
                   }}
                   loading="lazy"
+                  unoptimized
                 />
               )}
               <span style={{

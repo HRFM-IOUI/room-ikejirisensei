@@ -22,7 +22,7 @@ type Props = {
   onToggleStatus: () => void;
   onDuplicate: () => void;
   onSelect: (checked: boolean) => void;
-  isMobile: boolean;
+  // isMobile削除
 };
 
 const statusColor: Record<PostStatus, string> = {
@@ -31,7 +31,7 @@ const statusColor: Record<PostStatus, string> = {
 };
 
 export default function ArticleListItem({
-  post, selected, onEdit, onDelete, onToggleStatus, onDuplicate, onSelect, isMobile,
+  post, selected, onEdit, onDelete, onToggleStatus, onDuplicate, onSelect,
 }: Props) {
   // 日付の整形
   let createdAtStr = "";

@@ -122,8 +122,8 @@ export default function FullscreenEditorModal({
     }
   }, [open, value]);
 
-  const handleTextareaEvents = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
-    const target = e.target as HTMLTextAreaElement;
+  const handleTextareaEvents = (_e: React.SyntheticEvent<HTMLTextAreaElement>) => {
+    const target = _e.target as HTMLTextAreaElement;
     setCursorIndex(target.selectionStart ?? 0);
   };
 

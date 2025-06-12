@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
+import Image from "next/image"; // 追加
 import { db, auth } from "../../firebase";
 import {
   collection,
@@ -164,7 +165,7 @@ export default function DmChat({ threadId }: DmChatProps) {
   }
 
   // --- メッセージ送信
-  async function handleSend(e: FormEvent) {
+  async function handleSend(e: FormEvent | KeyboardEvent<HTMLTextAreaElement>) {
     e.preventDefault();
     if (!input.trim() || !user) return;
     setSending(true);
@@ -228,10 +229,10 @@ export default function DmChat({ threadId }: DmChatProps) {
   }
 
   // --- Enter送信/Shift+Enter改行
-  function handleInputKeyDown(e: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleInputKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend(e as any);
+      handleSend(e);
     }
   }
 
@@ -281,13 +282,19 @@ export default function DmChat({ threadId }: DmChatProps) {
             }}>
               {/* アイコン */}
               {msg.userIcon ? (
-                <img src={msg.userIcon} alt="icon" width={38} height={38}
+                <Image
+                  src={msg.userIcon}
+                  alt="icon"
+                  width={38}
+                  height={38}
                   style={{
                     borderRadius: "50%",
                     border: "1.5px solid #e1e6ee",
                     marginLeft: isMine ? 0 : 4,
                     marginRight: isMine ? 4 : 0,
+                    objectFit: "cover"
                   }}
+                  unoptimized
                 />
               ) : (
                 <div style={{
@@ -342,7 +349,14 @@ export default function DmChat({ threadId }: DmChatProps) {
                 ) : (
                   <>
                     {msg.type === "image" && msg.imageUrl && (
-                      <img src={msg.imageUrl} alt="画像" style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0" }} />
+                      <Image
+                        src={msg.imageUrl}
+                        alt="画像"
+                        width={180}
+                        height={120}
+                        style={{ maxWidth: 180, borderRadius: 10, margin: "7px 0", height: "auto" }}
+                        unoptimized
+                      />
                     )}
                     {msg.type === "video" && msg.videoUrl && (
                       <video src={msg.videoUrl} controls style={{ maxWidth: 210, borderRadius: 10, margin: "7px 0" }} />

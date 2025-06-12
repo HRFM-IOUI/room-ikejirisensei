@@ -2,6 +2,7 @@ import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { FaGripVertical, FaTrash, FaRegStickyNote } from "react-icons/fa";
+import Image from "next/image"; // 追加
 
 export type SupportedLang = "ja" | "en" | "tr" | "zh" | "ko" | "ru" | "ar";
 
@@ -85,10 +86,13 @@ export default function SortableBlock({
         );
       case "image":
         return block.content ? (
-          <img
+          <Image
             src={block.content}
             alt="画像ブロック"
-            style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80 }}
+            width={600}
+            height={300}
+            style={{ maxWidth: "100%", borderRadius: 7, minHeight: 80, height: "auto" }}
+            unoptimized
           />
         ) : (
           <input
