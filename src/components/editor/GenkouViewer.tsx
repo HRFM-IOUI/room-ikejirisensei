@@ -184,9 +184,8 @@ const GenkouViewer: React.FC<Props> = ({
 
   // ページとカーソル位置
   let pageCursorGridIdx: number | null = null;
-
-  // splitTextToPagesWithIndentAndKinsoku 関数の結果を受け取る
   const { pages, textToGrid, gridToText } = splitTextToPagesWithIndentAndKinsoku(text, cols, rows, lang);
+  const chars = pages[currentPage] || [];
 
   if (typeof cursorIndex === "number") {
     const pageStartIdx = currentPage * (cols * rows);
@@ -196,7 +195,10 @@ const GenkouViewer: React.FC<Props> = ({
         : textToGrid.length > 0
         ? textToGrid[textToGrid.length - 1] + 1
         : 0;
-    if (gridIdx >= pageStartIdx && gridIdx < pageStartIdx + cols * rows) {
+    if (
+      gridIdx >= pageStartIdx &&
+      gridIdx < pageStartIdx + cols * rows
+    ) {
       pageCursorGridIdx = gridIdx - pageStartIdx;
     }
   }
@@ -228,8 +230,6 @@ const GenkouViewer: React.FC<Props> = ({
   const SVG_WIDTH = rows * cellSize;
   const SVG_HEIGHT = cols * cellSize;
 
-  const chars = pages[currentPage] || [];
-
   const rubiRenderList: { gridIdx: number; ruby: string; length: number }[] = [];
   for (const r of rubiList) {
     const startTextIdx = r.index;
@@ -259,7 +259,7 @@ const GenkouViewer: React.FC<Props> = ({
         const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
-          <g key={`ch-${col}-${row}`}>
+          <g key={`ch-${col}-${row}`} >
             {isCursor && (
               <rect
                 x={col * cellSize}
@@ -328,7 +328,7 @@ const GenkouViewer: React.FC<Props> = ({
         const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
-          <g key={`ch-${row}-${col}`}>
+          <g key={`ch-${row}-${col}`} >
             {isCursor && (
               <rect
                 x={rtl ? SVG_WIDTH - (row + 1) * cellSize : row * cellSize}
