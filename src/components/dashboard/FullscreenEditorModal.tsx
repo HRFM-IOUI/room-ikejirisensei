@@ -39,7 +39,7 @@ const PDF_SAVED_LABELS: Record<NonNullable<Props["language"]>, string> = {
   en: "PDF downloaded.",
   tr: "PDF indirildi.",
   zh: "PDF已下载。",
-  ko: "PDF가 다운로드되었습니다.",
+  ko: "PDF가 다운로드되었습니다。",
   ar: "تم تنزيل PDF.",
   ru: "PDF загружен."
 };
