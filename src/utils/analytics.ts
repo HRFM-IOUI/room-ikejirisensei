@@ -12,6 +12,7 @@ import {
   orderBy,
   DocumentData,
   QueryDocumentSnapshot,
+  Timestamp, // Timestamp型のインポート
 } from "firebase/firestore";
 
 /**
@@ -66,7 +67,7 @@ export async function getArticleViewRankingWithDetails(limit: number = 10) {
           (postData as { title?: string })?.title ||
           "無題",
         tags: (postData as { tags?: string[] })?.tags || [],
-        createdAt: (postData as { createdAt?: { toDate?: () => Date } })?.createdAt?.toDate?.() || null,
+        createdAt: (postData as { createdAt?: Timestamp })?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
@@ -146,7 +147,7 @@ export async function getVideoViewRankingWithDetails(limit: number = 10) {
         title: (videoData as { title?: string })?.title || "無題動画",
         tags: (videoData as { tags?: string[] })?.tags || [],
         thumbnail: (videoData as { thumbnail?: string })?.thumbnail || null,
-        createdAt: (videoData as { createdAt?: { toDate?: () => Date } })?.createdAt?.toDate?.() || null,
+        createdAt: (videoData as { createdAt?: Timestamp })?.createdAt?.toDate?.() || null,
       };
     } catch {
       return {
@@ -178,12 +179,13 @@ export async function getUserCountsByDate() {
   // 登録日のISO日付単位にグルーピング
   const dateMap: { [date: string]: number } = {};
   snap.docs.forEach((d: QueryDocumentSnapshot<DocumentData>) => {
-    const userData = d.data() as { createdAt?: { toDate?: () => Date } | string | number };
+    const userData = d.data() as { createdAt?: Timestamp | string | number }; // Timestamp型を型指定
     const createdAt = userData.createdAt;
     let dateObj: Date | null = null;
 
-    if (createdAt && typeof (createdAt as { toDate?: () => Date }).toDate === "function") {
-      dateObj = (createdAt as { toDate: () => Date }).toDate();
+    // createdAtがTimestampである場合、toDate()を使用
+    if (createdAt instanceof Timestamp) {
+      dateObj = createdAt.toDate();
     } else if (
       typeof createdAt === "string" ||
       typeof createdAt === "number"
@@ -197,6 +199,7 @@ export async function getUserCountsByDate() {
     const date = dateObj.toISOString().slice(0, 10);
     dateMap[date] = (dateMap[date] || 0) + 1;
   });
+
   // 日付ソート・累積
   const dates = Object.keys(dateMap).sort();
   let total = 0;
@@ -225,11 +228,14 @@ export async function getActiveUserCount(days: number): Promise<number> {
   const snap = await getDocs(collection(db, "users"));
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
   let count = 0;
+
   snap.forEach((d) => {
-    const userData = d.data() as Record<string, any>;
+    const userData = d.data() as Record<string, unknown>;
     const lastActive = userData.lastActive;
     let lastDate: Date | null = null;
-    if (lastActive && typeof lastActive.toDate === "function") {
+
+    // lastActiveがTimestampである場合、toDate()を使用
+    if (lastActive instanceof Timestamp) {
       lastDate = lastActive.toDate();
     } else if (typeof lastActive === "string" || typeof lastActive === "number") {
       lastDate = new Date(lastActive);
@@ -250,7 +256,7 @@ export async function getDonationStats() {
   const snap = await getDocs(collection(db, "donations"));
   let total = 0;
   snap.forEach((d) => {
-    const data = d.data() as Record<string, any>;
+    const data = d.data() as Record<string, unknown>;
     total += Number(data.amount ?? 0);
   });
   return { total, count: snap.size };
@@ -273,7 +279,7 @@ export async function getArticleDetail(postId: string) {
   const ref = doc(db, "posts", postId);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  const data = snap.data() as Record<string, any>;
+  const data = snap.data() as Record<string, unknown>;
   return {
     id: postId,
     title: data.blocks?.[0]?.content?.slice(0, 30) || data.title || "無題",
