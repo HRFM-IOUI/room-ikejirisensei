@@ -110,7 +110,6 @@ const STROKE_CENTER = "#ddbb4b";
 const CURSOR_HIGHLIGHT = "#43aaff";
 const KINSOKU_HEAD = ["。", "、", ")", "]", "）", "」", "』", "】", "〙", "〗", "’", "”", "›", "≫", "》"];
 
-// テキスト分割＋変換テーブル生成
 function splitTextToPagesWithIndentAndKinsoku(
   text: string,
   cols: number,
@@ -181,7 +180,26 @@ const GenkouViewer: React.FC<Props> = ({
   const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title } = cfg;
 
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
-  const [currentPage, setCurrentPage] = useState(page);  // ページ状態管理
+  const [currentPage, setCurrentPage] = useState(page);
+
+  // ページとカーソル位置
+  let pageCursorGridIdx: number | null = null;
+
+  // splitTextToPagesWithIndentAndKinsoku 関数の結果を受け取る
+  const { pages, textToGrid, gridToText } = splitTextToPagesWithIndentAndKinsoku(text, cols, rows, lang);
+
+  if (typeof cursorIndex === "number") {
+    const pageStartIdx = currentPage * (cols * rows);
+    const gridIdx =
+      cursorIndex < textToGrid.length
+        ? textToGrid[cursorIndex]
+        : textToGrid.length > 0
+        ? textToGrid[textToGrid.length - 1] + 1
+        : 0;
+    if (gridIdx >= pageStartIdx && gridIdx < pageStartIdx + cols * rows) {
+      pageCursorGridIdx = gridIdx - pageStartIdx;
+    }
+  }
 
   useEffect(() => {
     const handleResize = () => {
@@ -210,25 +228,7 @@ const GenkouViewer: React.FC<Props> = ({
   const SVG_WIDTH = rows * cellSize;
   const SVG_HEIGHT = cols * cellSize;
 
-  const { pages, textToGrid, gridToText } = splitTextToPagesWithIndentAndKinsoku(text, cols, rows, lang);
   const chars = pages[currentPage] || [];
-
-  let pageCursorGridIdx: number | null = null;
-  if (typeof cursorIndex === "number") {
-    const pageStartIdx = currentPage * (cols * rows);
-    const gridIdx =
-      cursorIndex < textToGrid.length
-        ? textToGrid[cursorIndex]
-        : textToGrid.length > 0
-        ? textToGrid[textToGrid.length - 1] + 1
-        : 0;
-    if (
-      gridIdx >= pageStartIdx &&
-      gridIdx < pageStartIdx + cols * rows
-    ) {
-      pageCursorGridIdx = gridIdx - pageStartIdx;
-    }
-  }
 
   const rubiRenderList: { gridIdx: number; ruby: string; length: number }[] = [];
   for (const r of rubiList) {
