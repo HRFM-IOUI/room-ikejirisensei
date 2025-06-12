@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react"; 
 import { createPortal } from "react-dom";
 import DefaultEditor from "../editor/DefaultEditor";
 import NoteEditor from "../editor/NoteEditor";
@@ -48,7 +48,7 @@ const PDF_FAIL_LABELS: Record<NonNullable<Props["language"]>, string> = {
   en: "PDF export failed. Please try again.",
   tr: "PDF aktarımı başarısız oldu. Lütfen tekrar deneyin.",
   zh: "PDF导出失败，请重试。",
-  ko: "PDF 내보내기에 실패했습니다. 다시 시도해 주세요.",
+  ko: "PDF 내보내기에 실패했습니다. 다시 시도해 주세요。",
   ar: "فشل تصدير PDF. الرجاء المحاولة مرة أخرى.",
   ru: "Не удалось экспортировать PDF. Пожалуйста, попробуйте еще раз."
 };
@@ -187,7 +187,7 @@ export default function FullscreenEditorModal({
       }
       pdf.save(`genkou_${new Date().toISOString().slice(0, 7).replace("-", "")}.pdf`);
       toast.success(PDF_SAVED_LABELS[language] || PDF_SAVED_LABELS.ja, { id: "pdf" });
-    } catch (e) {
+    } catch (e: unknown) {
       toast.error(PDF_FAIL_LABELS[language] || PDF_FAIL_LABELS.ja, { id: "pdf" });
     }
     setPdfLoading(false);
