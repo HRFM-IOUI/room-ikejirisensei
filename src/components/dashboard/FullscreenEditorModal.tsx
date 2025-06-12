@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"; 
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import DefaultEditor from "../editor/DefaultEditor";
 import NoteEditor from "../editor/NoteEditor";
@@ -187,7 +187,7 @@ export default function FullscreenEditorModal({
       }
       pdf.save(`genkou_${new Date().toISOString().slice(0, 7).replace("-", "")}.pdf`);
       toast.success(PDF_SAVED_LABELS[language] || PDF_SAVED_LABELS.ja, { id: "pdf" });
-    } catch (e: unknown) {
+    } catch {
       toast.error(PDF_FAIL_LABELS[language] || PDF_FAIL_LABELS.ja, { id: "pdf" });
     }
     setPdfLoading(false);
