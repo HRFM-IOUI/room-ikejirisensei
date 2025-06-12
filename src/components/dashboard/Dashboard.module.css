@@ -91,49 +91,37 @@
 /* レスポンシブ対応 */
 @media (max-width: 1200px) {
   .dashboardRoot {
-    max-width: 99vw;
+    max-width: 100%;
     gap: 16px;
-    padding: 30px 0 60px 0;
+    padding: 30px 10px; /* 左右に余白を追加 */
   }
   .dashboardFooter {
-    max-width: 99vw;
+    max-width: 100%;
   }
   .dashboardSidebar, .dashboardRight {
-    min-width: 180px;
-    max-width: 98vw;
-    padding: 20px 4vw;
+    min-width: 100%;
+    max-width: 100%;
+    padding: 20px 5vw;
   }
   .dashboardMain {
-    max-width: 95vw;
-    padding: 22px 2vw;
+    max-width: 100%;
+    padding: 22px 4vw;
   }
 }
 
 @media (max-width: 1024px) {
   .dashboardRoot {
     flex-direction: column;
-    align-items: stretch;
-    max-width: 100vw;
-    padding: 12px 0 18px 0;
-    gap: 0;
+    padding: 12px 0;
   }
   .dashboardSidebar,
-  .dashboardRight,
-  .dashboardMain {
-    max-width: 100vw;
-    margin: 10px 0;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(20,36,80,0.08);
-    padding: 12px 2vw;
+  .dashboardRight {
+    max-width: 100%;
+    padding: 12px 4vw;
   }
   .dashboardMain {
-    padding: 13px 2vw;
-  }
-  .dashboardFooter {
-    max-width: 100vw;
-    margin: 8px auto 0 auto;
-    gap: 8px;
-    padding: 0 2vw;
+    max-width: 100%;
+    padding: 10px 2vw;
   }
 }
 
@@ -141,17 +129,17 @@
   .dashboardSidebar,
   .dashboardRight,
   .dashboardMain {
-    padding: 7px 2vw;
+    padding: 8px 2vw; /* より小さいスペース */
     margin: 6px 0;
     border-radius: 7px;
   }
   .dashboardMain {
-    max-width: 100vw;
-    padding: 9px 1vw;
+    max-width: 100%;
+    padding: 15px 1vw;
     min-height: 420px;
   }
   .dashboardFooter {
-    margin: 4px 0 0 0;
+    margin: 4px 0;
     gap: 6px;
     padding: 0 1vw;
     flex-direction: column;

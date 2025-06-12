@@ -109,7 +109,6 @@ const STROKE_MAIN = "#b9cbe9";
 const STROKE_CENTER = "#ddbb4b";
 const CURSOR_HIGHLIGHT = "#43aaff";
 const KINSOKU_HEAD = ["。", "、", ")", "]", "）", "」", "』", "】", "〙", "〗", "’", "”", "›", "≫", "》"];
-// const KINSOKU_TAIL = ["「", "『", "（", "【", "〘", "〖", "‘", "“", "‹", "≪", "《"]; // ←未使用のため削除
 
 // テキスト分割＋変換テーブル生成
 function splitTextToPagesWithIndentAndKinsoku(
@@ -122,7 +121,6 @@ function splitTextToPagesWithIndentAndKinsoku(
   const grid: string[] = [];
   const textToGrid: number[] = [];
   const gridToText: number[] = [];
-  // let gridIdx = 0; // ←未使用のため削除
   const paragraphs = text.split(/\r?\n/);
   let textIdx = 0;
 
@@ -139,7 +137,6 @@ function splitTextToPagesWithIndentAndKinsoku(
     if (p.length > 0 && lang === "ja") {
       grid.push("");
       gridToText.push(-1);
-      // gridIdx++; // ←未使用
     }
     for (let ci = 0; ci < p.length; ++ci) {
       if (
@@ -160,7 +157,6 @@ function splitTextToPagesWithIndentAndKinsoku(
         textToGrid[textIdx] = grid.length;
         grid.push(p[ci]);
         gridToText.push(textIdx);
-        // gridIdx++; // ←未使用
       }
       textIdx++;
     }
@@ -186,6 +182,8 @@ const GenkouViewer: React.FC<Props> = ({
 
   // サイズ追従: 高さ-2cm, 横幅+12cm（cm→px換算: 1cm≒37.8px）
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
+  const [currentPage, setCurrentPage] = useState(page);
+
   useEffect(() => {
     const handleResize = () => {
       const sidebar = 280; // サイドバー幅想定
@@ -194,7 +192,6 @@ const GenkouViewer: React.FC<Props> = ({
       let maxH = window.innerHeight - 96 - (37.8 * 2);               // 縦-2cm
       maxW = Math.max(400, Math.min(maxW, 1800));
       maxH = Math.max(350, Math.min(maxH, 1050));
-      // A4横: 297:210 = 1.414
       const ratio = 297 / 210;
       let w = maxW;
       let h = w / ratio;
@@ -215,11 +212,11 @@ const GenkouViewer: React.FC<Props> = ({
   const SVG_HEIGHT = cols * cellSize;
 
   const { pages, textToGrid, gridToText } = splitTextToPagesWithIndentAndKinsoku(text, cols, rows, lang);
-  const chars = pages[page] || [];
+  const chars = pages[currentPage] || [];
 
   let pageCursorGridIdx: number | null = null;
   if (typeof cursorIndex === "number") {
-    const pageStartIdx = page * (cols * rows);
+    const pageStartIdx = currentPage * (cols * rows);
     const gridIdx =
       cursorIndex < textToGrid.length
         ? textToGrid[cursorIndex]
@@ -234,19 +231,12 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
-  // ルビ描画位置
-  const rubiRenderList: {
-    gridIdx: number;
-    ruby: string;
-    length: number;
-  }[] = [];
+  const rubiRenderList: { gridIdx: number; ruby: string; length: number }[] = [];
   for (const r of rubiList) {
     const startTextIdx = r.index;
-    // const endTextIdx = r.index + r.length; // ←未使用のため削除
     const gridStart = textToGrid[startTextIdx];
-    // gridEndは使用しないため削除
-    const pageStart = page * cols * rows;
-    const pageEnd = (page + 1) * cols * rows;
+    const pageStart = currentPage * cols * rows;
+    const pageEnd = (currentPage + 1) * cols * rows;
     if (
       gridStart !== undefined &&
       gridStart >= pageStart &&
@@ -260,7 +250,6 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
-  // SVGグリッド＋ルビ
   const charsSVG: React.ReactNode[] = [];
   if (direction === "vertical-rl" || writingMode === "vertical-rl") {
     for (let col = rows - 1; col >= 0; --col) {
@@ -268,7 +257,7 @@ const GenkouViewer: React.FC<Props> = ({
         const idx = (rows - 1 - col) * cols + row;
         const ch = chars[idx] || "";
         const isCursor = pageCursorGridIdx === idx;
-        const textIdx = gridToText[page * cols * rows + idx];
+        const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
           <g key={`ch-${col}-${row}`}>
@@ -337,7 +326,7 @@ const GenkouViewer: React.FC<Props> = ({
         const idx = col * rows + (rtl ? rows - 1 - row : row);
         const ch = chars[idx] || "";
         const isCursor = pageCursorGridIdx === idx;
-        const textIdx = gridToText[page * cols * rows + idx];
+        const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
           <g key={`ch-${row}-${col}`}>
