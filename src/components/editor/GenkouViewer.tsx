@@ -1,100 +1,47 @@
 import React, { useEffect, useState } from "react";
 
-// 多言語・各国向け原稿用紙設定（省略なし！）
+// 多言語・各国向け原稿用紙設定（省略なし）
 const LANG_CONFIG = {
   ja: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif JP', 'Yu Mincho', serif",
-    direction: "vertical-rl",
-    writingMode: "vertical-rl",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 29,
-    title: "原稿用紙",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif JP', 'Yu Mincho', serif",
+    direction: "vertical-rl", writingMode: "vertical-rl", rtl: false,
+    cellSize: 46, fontSize: 29, title: "原稿用紙", aspect: "landscape",
   },
   en: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif', 'Times New Roman', serif",
-    direction: "ltr",
-    writingMode: "horizontal-tb",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 22,
-    title: "GENKOU-YOUSHI",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif', 'Times New Roman', serif",
+    direction: "ltr", writingMode: "horizontal-tb", rtl: false,
+    cellSize: 46, fontSize: 22, title: "GENKOU-YOUSHI", aspect: "landscape",
   },
   tr: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif', 'Times New Roman', serif",
-    direction: "ltr",
-    writingMode: "horizontal-tb",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 22,
-    title: "GENKOU-YOUSHI",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif', 'Times New Roman', serif",
+    direction: "ltr", writingMode: "horizontal-tb", rtl: false,
+    cellSize: 46, fontSize: 22, title: "GENKOU-YOUSHI", aspect: "landscape",
   },
   zh: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif SC', 'Noto Serif', 'SimSun', serif",
-    direction: "vertical-rl",
-    writingMode: "vertical-rl",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 28,
-    title: "稿用纸",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif SC', 'Noto Serif', 'SimSun', serif",
+    direction: "vertical-rl", writingMode: "vertical-rl", rtl: false,
+    cellSize: 46, fontSize: 28, title: "稿用纸", aspect: "landscape",
   },
   ko: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif KR', 'Noto Serif', 'Malgun Gothic', serif",
-    direction: "vertical-rl",
-    writingMode: "vertical-rl",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 28,
-    title: "원고지",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif KR', 'Noto Serif', 'Malgun Gothic', serif",
+    direction: "vertical-rl", writingMode: "vertical-rl", rtl: false,
+    cellSize: 46, fontSize: 28, title: "원고지", aspect: "landscape",
   },
   ru: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Serif', 'Times New Roman', serif",
-    direction: "ltr",
-    writingMode: "horizontal-tb",
-    rtl: false,
-    cellSize: 46,
-    fontSize: 22,
-    title: "ГЕНКОЙ-ЁСИ",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Serif', 'Times New Roman', serif",
+    direction: "ltr", writingMode: "horizontal-tb", rtl: false,
+    cellSize: 46, fontSize: 22, title: "ГЕНКОЙ-ЁСИ", aspect: "landscape",
   },
   ar: {
-    cols: 20,
-    rows: 20,
-    fontFamily: "'Noto Naskh Arabic', 'Noto Serif', serif",
-    direction: "rtl",
-    writingMode: "horizontal-tb",
-    rtl: true,
-    cellSize: 46,
-    fontSize: 22,
-    title: "ورقة المخطوطة",
-    aspect: "landscape",
+    cols: 20, rows: 20, fontFamily: "'Noto Naskh Arabic', 'Noto Serif', serif",
+    direction: "rtl", writingMode: "horizontal-tb", rtl: true,
+    cellSize: 46, fontSize: 22, title: "ورقة المخطوطة", aspect: "landscape",
   },
 };
 
 type SupportedLang = keyof typeof LANG_CONFIG;
 
-type Rubi = {
-  index: number;
-  length: number;
-  ruby: string;
-};
+type Rubi = { index: number; length: number; ruby: string; };
 
 type Props = {
   text: string;
@@ -110,12 +57,13 @@ const STROKE_CENTER = "#ddbb4b";
 const CURSOR_HIGHLIGHT = "#43aaff";
 const KINSOKU_HEAD = ["。", "、", ")", "]", "）", "」", "』", "】", "〙", "〗", "’", "”", "›", "≫", "》"];
 
+// --- ここからロジック ---
 function splitTextToPagesWithIndentAndKinsoku(
   text: string,
   cols: number,
   rows: number,
   lang: SupportedLang = "ja"
-): { pages: string[][], textToGrid: number[], gridToText: number[] } {
+): { pages: string[][]; textToGrid: number[]; gridToText: number[] } {
   const pages: string[][] = [];
   const grid: string[] = [];
   const textToGrid: number[] = [];
@@ -179,14 +127,16 @@ const GenkouViewer: React.FC<Props> = ({
   const cfg = LANG_CONFIG[lang] || LANG_CONFIG["ja"];
   const { cols, rows, cellSize, fontFamily, direction, writingMode, rtl, fontSize, title } = cfg;
 
+  // ページ状態
   const [containerSize, setContainerSize] = useState({ width: 1200, height: 850 });
   const [currentPage, setCurrentPage] = useState(page);
 
-  // ページとカーソル位置
-  let pageCursorGridIdx: number | null = null;
+  // 1. テキスト分割（必ず先に宣言！）
   const { pages, textToGrid, gridToText } = splitTextToPagesWithIndentAndKinsoku(text, cols, rows, lang);
   const chars = pages[currentPage] || [];
 
+  // 2. カーソル位置
+  let pageCursorGridIdx: number | null = null;
   if (typeof cursorIndex === "number") {
     const pageStartIdx = currentPage * (cols * rows);
     const gridIdx =
@@ -203,34 +153,25 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
-  // ページ送り機能
+  // 3. ページ送り機能
   const goToNextPage = () => {
-    if (currentPage < pages.length - 1) {
-      setCurrentPage(currentPage + 1);
-    }
+    if (currentPage < pages.length - 1) setCurrentPage(currentPage + 1);
   };
-
   const goToPreviousPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
+    if (currentPage > 0) setCurrentPage(currentPage - 1);
   };
 
+  // 4. サイズ調整
   useEffect(() => {
     const handleResize = () => {
-      const sidebar = 280;
-      const margin = 28;
+      const sidebar = 280, margin = 28;
       let maxW = window.innerWidth - sidebar - margin + (37.8 * 12);
       let maxH = window.innerHeight - 96 - (37.8 * 2);
       maxW = Math.max(400, Math.min(maxW, 1800));
       maxH = Math.max(350, Math.min(maxH, 1050));
       const ratio = 297 / 210;
-      let w = maxW;
-      let h = w / ratio;
-      if (h > maxH) {
-        h = maxH;
-        w = h * ratio;
-      }
+      let w = maxW, h = w / ratio;
+      if (h > maxH) { h = maxH; w = h * ratio; }
       setContainerSize({ width: w, height: h });
     };
     handleResize();
@@ -243,6 +184,7 @@ const GenkouViewer: React.FC<Props> = ({
   const SVG_WIDTH = rows * cellSize;
   const SVG_HEIGHT = cols * cellSize;
 
+  // 5. ルビ
   const rubiRenderList: { gridIdx: number; ruby: string; length: number }[] = [];
   for (const r of rubiList) {
     const startTextIdx = r.index;
@@ -262,6 +204,7 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
+  // 6. SVG生成
   const charsSVG: React.ReactNode[] = [];
   if (direction === "vertical-rl" || writingMode === "vertical-rl") {
     for (let col = rows - 1; col >= 0; --col) {
@@ -272,7 +215,7 @@ const GenkouViewer: React.FC<Props> = ({
         const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
-          <g key={`ch-${col}-${row}`} >
+          <g key={`ch-${col}-${row}`}>
             {isCursor && (
               <rect
                 x={col * cellSize}
@@ -306,10 +249,7 @@ const GenkouViewer: React.FC<Props> = ({
               style={{ cursor: !!onGridClick && textIdx >= 0 ? "pointer" : "default" }}
               onClick={
                 !!onGridClick && textIdx >= 0
-                  ? (e) => {
-                      e.stopPropagation();
-                      onGridClick(textIdx);
-                    }
+                  ? (e) => { e.stopPropagation(); onGridClick(textIdx); }
                   : undefined
               }
             />
@@ -331,9 +271,7 @@ const GenkouViewer: React.FC<Props> = ({
   } else {
     for (let row = 0; row < rows; ++row) {
       for (let col = 0; col < cols; ++col) {
-        const x = rtl
-          ? SVG_WIDTH - row * cellSize - cellSize / 2
-          : row * cellSize + cellSize / 2;
+        const x = rtl ? SVG_WIDTH - row * cellSize - cellSize / 2 : row * cellSize + cellSize / 2;
         const y = col * cellSize + cellSize * 0.75;
         const idx = col * rows + (rtl ? rows - 1 - row : row);
         const ch = chars[idx] || "";
@@ -341,7 +279,7 @@ const GenkouViewer: React.FC<Props> = ({
         const textIdx = gridToText[currentPage * cols * rows + idx];
         const rubi = rubiRenderList.find(r => r.gridIdx === idx);
         charsSVG.push(
-          <g key={`ch-${row}-${col}`} >
+          <g key={`ch-${row}-${col}`}>
             {isCursor && (
               <rect
                 x={rtl ? SVG_WIDTH - (row + 1) * cellSize : row * cellSize}
@@ -375,10 +313,7 @@ const GenkouViewer: React.FC<Props> = ({
               style={{ cursor: !!onGridClick && textIdx >= 0 ? "pointer" : "default" }}
               onClick={
                 !!onGridClick && textIdx >= 0
-                  ? (e) => {
-                      e.stopPropagation();
-                      onGridClick(textIdx);
-                    }
+                  ? (e) => { e.stopPropagation(); onGridClick(textIdx); }
                   : undefined
               }
             />
@@ -400,7 +335,7 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
-  // 列番号を表示する
+  // 列番号
   const lineNumberSVG: React.ReactNode[] = [];
   const lineNumFont = `${Math.max(13, fontSize * 0.9)}px ${fontFamily}`;
   const lineNumColor = "#bcb893";
@@ -440,21 +375,29 @@ const GenkouViewer: React.FC<Props> = ({
     }
   }
 
+  // --- JSX ---
   return (
     <div
       style={{
-        width: "100%",
-        minHeight: 0,
-        minWidth: 0,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        background: "#e8e6d3",
-        padding: "0",
-        boxSizing: "border-box",
+        width: "100%", minHeight: 0, minWidth: 0, display: "flex",
+        justifyContent: "center", alignItems: "center",
+        background: "#e8e6d3", padding: "0", boxSizing: "border-box",
+        flexDirection: "column"
       }}
       aria-label="原稿用紙プレビュー"
     >
+      <div
+        style={{
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: 12,
+        }}
+      >
+        <button onClick={goToPreviousPage} disabled={currentPage === 0}>← 前のページ</button>
+        <span style={{ margin: "0 16px" }}>
+          {currentPage + 1} / {pages.length}
+        </span>
+        <button onClick={goToNextPage} disabled={currentPage >= pages.length - 1}>次のページ →</button>
+      </div>
       <div
         style={{
           width: paperWidth,
